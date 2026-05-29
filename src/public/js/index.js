@@ -155,12 +155,30 @@ const weaponIds = {
     "studded_hydra_gloves": 5035,
 }
 
-const editModal = (img, weaponName, paintName, weaponId, paintId) => {
+const editModal = (img, weaponName, paintName, weaponId, paintId, stattrakAvailable) => {
     document.getElementById('modalImg').src = img
     document.getElementById('modalWeapon').innerText = weaponName
     document.getElementById('modalPaint').innerText = paintName
     currentWeaponId = weaponIds[weaponId]
     currentPaintId = paintId
+
+    // StatTrak only applies to items that support it (e.g. not gloves / low-tier
+    // skins). Hide the switch otherwise, and reflect any already-saved value.
+    const stWrapper = document.getElementById('stattrakWrapper')
+    const stInput = document.getElementById('stattrak')
+    if (stattrakAvailable) {
+        stWrapper.style.display = ''
+        let saved = false
+        if (typeof selectedSkins !== 'undefined') {
+            const row = selectedSkins.find(s => s.weapon_defindex == currentWeaponId && s.weapon_paint_id == currentPaintId)
+            if (row) saved = !!Number(row.weapon_stattrak)
+        }
+        stInput.checked = saved
+    } else {
+        stWrapper.style.display = 'none'
+        stInput.checked = false
+    }
+
     console.log(img, weaponName, paintName, currentWeaponId, currentPaintId)
 }
 
@@ -170,15 +188,16 @@ const changeParams = () => {
     let paintid = currentPaintId
     let float = document.getElementById("float").value
     let pattern = document.getElementById("pattern").value
+    let stattrak = document.getElementById("stattrak").checked ? 1 : 0
 
-    document.getElementById('modalButton').innerHTML = 
+    document.getElementById('modalButton').innerHTML =
         `
             <div class="spinner-border spinner-border-sm" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
         `
 
-    socket.emit('change-params', {steamid: steamid, weaponid: weaponid, paintid: paintid, float: float, pattern: pattern})
+    socket.emit('change-params', {steamid: steamid, weaponid: weaponid, paintid: paintid, float: float, pattern: pattern, stattrak: stattrak})
 }
 
 const putOnWorkshop = (setId, selected_knife_id, selected_knife, selected_gloves) => {

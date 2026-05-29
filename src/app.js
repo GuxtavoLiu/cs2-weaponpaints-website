@@ -14,6 +14,10 @@ const lang = require(`./lang/${config.lang}.json`);
 
 const app = new express();
 
+// [TEMP-DEBUG] verbose logging for skin-save debugging, gated behind WP_DEBUG=1
+const DEBUG = process.env.WP_DEBUG === "1";
+const dbg = (...args) => { if (DEBUG) console.log("[WP_DEBUG]", ...args); };
+
 const PORT = config.PORT;
 
 let returnURL = `${config.PROTOCOL}://${config.HOST}${config.SUBDIR}api/auth/steam/return`;
@@ -219,125 +223,64 @@ io.on("connection", (socket) => {
   console.log("Socket connected");
 
   socket.on("change-knife", (data) => {
+    dbg("change-knife recv", data);
+    // weapon_team in PK -> write both teams (2/3) via upsert.
     connection.query(
-      "SELECT * FROM wp_player_knife WHERE steamid = ?",
-      [data.steamUserId],
+      "INSERT INTO wp_player_knife (steamid, weapon_team, knife) VALUES (?, 2, ?), (?, 3, ?) ON DUPLICATE KEY UPDATE knife = VALUES(knife)",
+      [data.steamUserId, data.weaponid, data.steamUserId, data.weaponid],
       (err, results, fields) => {
-        if (results.length >= 1) {
-          connection.query(
-            "UPDATE wp_player_knife SET knife = ? WHERE steamid = ?",
-            [data.weaponid, data.steamUserId],
-            (err, results, fields) => {
-              socket.emit("knife-changed", { knife: data.weaponid });
-            }
-          );
-        } else {
-          connection.query(
-            "INSERT INTO wp_player_knife (steamid, knife) values (?, ?)",
-            [data.steamUserId, data.weaponid],
-            (err, results, fields) => {
-              socket.emit("knife-changed", { knife: data.weaponid });
-            }
-          );
-        }
+        if (err) dbg("change-knife SQL ERROR", err.message);
+        socket.emit("knife-changed", { knife: data.weaponid });
       }
     );
   });
 
   socket.on("change-glove", (data) => {
+    dbg("change-glove recv", data);
     connection.query(
-      "SELECT * FROM wp_player_gloves WHERE steamid = ?",
-      [data.steamUserId],
+      "INSERT INTO wp_player_gloves (steamid, weapon_team, weapon_defindex) VALUES (?, 2, ?), (?, 3, ?) ON DUPLICATE KEY UPDATE weapon_defindex = VALUES(weapon_defindex)",
+      [data.steamUserId, data.weaponid, data.steamUserId, data.weaponid],
       (err, results, fields) => {
-        if (results.length >= 1) {
-          connection.query(
-            "UPDATE wp_player_gloves SET weapon_defindex = ? WHERE steamid = ?",
-            [data.weaponid, data.steamUserId],
-            (err, results, fields) => {
-              socket.emit("glove-changed", { knife: data.weaponid });
-            }
-          );
-        } else {
-          connection.query(
-            "INSERT INTO wp_player_gloves (steamid, weapon_defindex) values (?, ?)",
-            [data.steamUserId, data.weaponid],
-            (err, results, fields) => {
-              socket.emit("glove-changed", { knife: data.weaponid });
-            }
-          );
-        }
+        if (err) dbg("change-glove SQL ERROR", err.message);
+        socket.emit("glove-changed", { knife: data.weaponid });
       }
     );
   });
 
   socket.on("change-music", (data) => {
+    dbg("change-music recv", data);
     connection.query(
-      "SELECT * FROM wp_player_music WHERE steamid = ?",
-      [data.steamid],
+      "INSERT INTO wp_player_music (steamid, weapon_team, music_id) VALUES (?, 2, ?), (?, 3, ?) ON DUPLICATE KEY UPDATE music_id = VALUES(music_id)",
+      [data.steamid, data.id, data.steamid, data.id],
       (err, results, fields) => {
-        if (results.length >= 1) {
-          connection.query(
-            "UPDATE wp_player_music SET music_id = ? WHERE steamid = ?",
-            [data.id, data.steamid],
-            (err, results, fields) => {
-              socket.emit("music-changed", { music: data.id });
-            }
-          );
-        } else {
-          connection.query(
-            "INSERT INTO wp_player_music (steamid, music_id) values (?, ?)",
-            [data.steamid, data.id],
-            (err, results, fields) => {
-              socket.emit("music-changed", { music: data.id });
-            }
-          );
-        }
+        if (err) dbg("change-music SQL ERROR", err.message);
+        socket.emit("music-changed", { music: data.id });
       }
     );
   });
 
   socket.on("change-skin", (data) => {
+    dbg("change-skin recv", data);
+    // weapon_team is part of the composite PK and has no default; write rows for
+    // both teams (2=T, 3=CT) so the skin applies regardless of side. Upsert keeps
+    // it idempotent when the weapon already has a row.
     connection.query(
-      "SELECT * FROM wp_player_skins WHERE weapon_defindex = ? AND steamid = ?",
-      [data.weaponid, data.steamid],
+      "INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id) VALUES (?, 2, ?, ?), (?, 3, ?, ?) ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id)",
+      [data.steamid, data.weaponid, data.paintid, data.steamid, data.weaponid, data.paintid],
       (err, results, fields) => {
-        if (results.length >= 1) {
-          connection.query(
-            "UPDATE wp_player_skins SET weapon_paint_id = ? WHERE steamid = ? AND weapon_defindex = ?",
-            [data.paintid, data.steamid, data.weaponid],
-            (err, results, fields) => {
-              connection.query(
-                "SELECT * FROM wp_player_skins WHERE steamid = ?",
-                [data.steamid],
-                (err, results2, fields) => {
-                  socket.emit("skin-changed", {
-                    weaponid: data.weaponid,
-                    paintid: data.paintid,
-                    newSkins: results2,
-                  });
-                }
-              );
-            }
-          );
-        } else {
-          connection.query(
-            "INSERT INTO wp_player_skins (steamid, weapon_defindex, weapon_paint_id) VALUES (?, ?, ?)",
-            [data.steamid, data.weaponid, data.paintid],
-            (err, results, fields) => {
-              connection.query(
-                "SELECT * FROM wp_player_skins WHERE steamid = ?",
-                [data.steamid],
-                (err, results2, fields) => {
-                  socket.emit("skin-changed", {
-                    weaponid: data.weaponid,
-                    paintid: data.paintid,
-                    newSkins: results2,
-                  });
-                }
-              );
-            }
-          );
-        }
+        if (err) dbg("change-skin SQL ERROR", err.message);
+        else dbg("change-skin SQL ok affectedRows=", results.affectedRows);
+        connection.query(
+          "SELECT * FROM wp_player_skins WHERE steamid = ?",
+          [data.steamid],
+          (err, results2, fields) => {
+            socket.emit("skin-changed", {
+              weaponid: data.weaponid,
+              paintid: data.paintid,
+              newSkins: results2,
+            });
+          }
+        );
       }
     );
   });
@@ -392,10 +335,21 @@ io.on("connection", (socket) => {
   });
 
   socket.on("change-params", (data) => {
+    dbg("change-params recv", data);
+    const wear = parseFloat(data.float);
+    const seed = parseInt(data.pattern, 10) || 0;
+    const safeWear = Number.isFinite(wear) ? wear : 0;
+    const stattrak = data.stattrak ? 1 : 0;
+    // The modal carries weapon_defindex + paint_id, so a single click can fully
+    // create the skin row (paint + wear + seed + stattrak) for both teams, not
+    // just update a pre-existing one. weapon_team is in the PK, so it must be
+    // supplied.
     connection.query(
-      "UPDATE wp_player_skins SET weapon_wear = ?, weapon_seed = ? WHERE steamid = ? AND weapon_defindex = ? AND weapon_paint_id = ?",
-      [data.float, data.pattern, data.steamid, data.weaponid, data.paintid],
+      "INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id, weapon_wear, weapon_seed, weapon_stattrak) VALUES (?, 2, ?, ?, ?, ?, ?), (?, 3, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id), weapon_wear = VALUES(weapon_wear), weapon_seed = VALUES(weapon_seed), weapon_stattrak = VALUES(weapon_stattrak)",
+      [data.steamid, data.weaponid, data.paintid, safeWear, seed, stattrak, data.steamid, data.weaponid, data.paintid, safeWear, seed, stattrak],
       (err, results, fields) => {
+        if (err) dbg("change-params SQL ERROR", err.message);
+        else dbg("change-params SQL ok affectedRows=", results.affectedRows);
         socket.emit("params-changed");
       }
     );

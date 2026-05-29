@@ -10,13 +10,24 @@ async function getCachedOrFetch(url, storageKey) {
 
   const response = await fetch(url);
   const data = await response.json();
-  localStorage.setItem(storageKey, JSON.stringify(data));
+  // Caching is best-effort: the skins blob is ~5MB and can blow the localStorage
+  // quota, so never let a failed write break rendering — just skip the cache.
+  try {
+    localStorage.setItem(storageKey, JSON.stringify(data));
+  } catch (e) {
+    console.warn("Skipping localStorage cache for", storageKey, e && e.name);
+  }
   return data;
 }
 
+// Drop the pre-fix skin cache (images pointed at a dead CDN path). Bumping the
+// skins cache key below forces a refetch; this also frees the stale ~5MB blob so
+// the new entry doesn't trip the quota.
+["en", "pt-BR", "ru", "zh-CN"].forEach((l) => localStorage.removeItem(`${l}-skins`));
+
 export let skinsObject = await getCachedOrFetch(
   `/js/json/skins/${lang}-skins.json`,
-  `${lang}-skins`
+  `${lang}-skins-v2`
 );
 export let defaultsObject = await getCachedOrFetch(
   `/js/json/defaults/${lang}-defaults.json`,
@@ -517,7 +528,7 @@ window.knifeSkins = (knifeType) => {
         element.weapon.name
       }\', \'${element.pattern.name} ${phase}\', \'${element.weapon.id}\' , \'${
         element.paint_index
-      }\')" style="z-index: 3;" class="settings d-flex justify-content-center align-items-center bg-light text-dark rounded-circle" data-bs-toggle="modal" data-bs-target="#patternFloat">
+      }\', ${!!element.stattrak})" style="z-index: 3;" class="settings d-flex justify-content-center align-items-center bg-light text-dark rounded-circle" data-bs-toggle="modal" data-bs-target="#patternFloat">
                         <i class="fa-solid fa-gear"></i>
                     </button>
 
