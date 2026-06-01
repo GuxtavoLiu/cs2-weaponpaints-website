@@ -789,6 +789,28 @@ li {
     border-style: solid;
     border-color: #777;
 }
+.sticker-apply-all {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: var(--bs-primary, #0d6efd);
+    color: #fff;
+    font-size: .68rem;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    transition: transform .1s ease, background-color .15s ease;
+}
+.sticker-apply-all:hover {
+    transform: scale(1.12);
+    background-color: #0b5ed7;
+}
 .sticker-wear {
     width: 70px;
 }

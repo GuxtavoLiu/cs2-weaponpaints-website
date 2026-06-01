@@ -204,6 +204,7 @@ const renderStickerSlot = (slot, id, wear) => {
     const img = document.getElementById(`stickerImg-${slot}`)
     const plus = document.getElementById(`stickerPlus-${slot}`)
     const clearBtn = document.getElementById(`stickerClear-${slot}`)
+    const applyAllBtn = document.getElementById(`stickerApplyAll-${slot}`)
     const wearWrap = slotEl.querySelector('.sticker-wear-wrap')
     const wearInput = document.getElementById(`stickerWear-${slot}`)
     const wearVal = document.getElementById(`stickerWearVal-${slot}`)
@@ -220,6 +221,7 @@ const renderStickerSlot = (slot, id, wear) => {
         img.style.display = sticker ? 'block' : 'none'
         plus.style.display = sticker ? 'none' : 'block'
         clearBtn.style.display = 'inline-block'
+        if (applyAllBtn) applyAllBtn.style.display = 'flex'
         wearWrap.style.display = 'block'
         const w = Number.isFinite(wear) ? wear : 0
         wearInput.value = w
@@ -230,9 +232,22 @@ const renderStickerSlot = (slot, id, wear) => {
         img.style.display = 'none'
         plus.style.display = 'block'
         clearBtn.style.display = 'none'
+        if (applyAllBtn) applyAllBtn.style.display = 'none'
         wearWrap.style.display = 'none'
         wearInput.value = 0
         wearVal.innerText = '0.00'
+    }
+}
+
+// Copy this slot's sticker + wear into all 5 slots.
+const applyStickerToAll = (event, slot) => {
+    if (event) event.stopPropagation()
+    const id = stickerSlots[slot]
+    if (!id || id <= 0) return
+    const wear = parseFloat(document.getElementById(`stickerWear-${slot}`).value) || 0
+    for (let i = 0; i < STICKER_SLOTS; i++) {
+        if (i === slot) continue
+        renderStickerSlot(i, id, wear)
     }
 }
 
@@ -389,6 +404,7 @@ window.onStickerWearInput = onStickerWearInput
 window.renderStickerResults = renderStickerResults
 window.selectSticker = selectSticker
 window.clearSticker = clearSticker
+window.applyStickerToAll = applyStickerToAll
 
 const editModal = (img, weaponName, paintName, weaponId, paintId, stattrakAvailable) => {
     document.getElementById('modalImg').src = img
