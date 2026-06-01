@@ -133,21 +133,29 @@ app.get(config.SUBDIR, (req, res) => {
                     "SELECT * FROM wp_player_music WHERE steamid = ?",
                     [req.user.id],
                     (err, results4, fields) => {
-                      results = results !=undefined ? results : [];
-                      results2 = results2 !=undefined ? results2 : [];
-                      results3 = results3 !=undefined ? results3 : [];
-                      results4 = results4 !=undefined ? results4 : [];
-                      res.render("index", {
-                        config: config,
-                        session: req.session,
-                        user: req.user,
-                        knife: results[0],
-                        skins: results2,
-                        agents: results3[0],
-                        musics: results4[0],
-                        lang: lang,
-                        subdir: config.SUBDIR,
-                      });
+                      connection.query(
+                        "SELECT * FROM wp_player_gloves WHERE steamid = ?",
+                        [req.user.id],
+                        (err, results5, fields) => {
+                          results = results !=undefined ? results : [];
+                          results2 = results2 !=undefined ? results2 : [];
+                          results3 = results3 !=undefined ? results3 : [];
+                          results4 = results4 !=undefined ? results4 : [];
+                          results5 = results5 !=undefined ? results5 : [];
+                          res.render("index", {
+                            config: config,
+                            session: req.session,
+                            user: req.user,
+                            knife: results[0],
+                            skins: results2,
+                            agents: results3[0],
+                            musics: results4[0],
+                            gloves: results5[0],
+                            lang: lang,
+                            subdir: config.SUBDIR,
+                          });
+                        }
+                      );
                     }
                   );
                 }

@@ -682,8 +682,9 @@ const renderLoadoutGrid = () => {
     const defByDef = (defindex) => defaultsObject.find(d => Number(d.weapon_defindex) == Number(defindex))
 
     // Build a card descriptor for a weapon (by weapon_name), showing its equipped
-    // skin or, if none, the default weapon.
-    const weaponCard = (weaponName) => {
+    // skin or, if none, the default weapon. clickOverride lets knives/gloves jump
+    // to their full selector (to change the model) instead of a single weapon.
+    const weaponCard = (weaponName, clickOverride) => {
         const def = defByName(weaponName)
         if (!def) return null
         const defindex = Number(def.weapon_defindex)
@@ -699,28 +700,28 @@ const renderLoadoutGrid = () => {
             st: sk ? !!sk.stattrak : false,
             paint: sk ? sk.paint_index : 0,
             weaponName: weaponName,
-            click: `knifeSkins('${loadoutEsc(weaponName)}')`
+            click: clickOverride || `knifeSkins('${loadoutEsc(weaponName)}')`
         }
     }
 
     const cards = []
 
-    // Knife (equipped) — else a card that jumps to knife selection.
+    // Knife (equipped) — clicking opens the full knife selector to change model too.
     if (selectedKnife && selectedKnife.knife) {
-        const c = weaponCard(selectedKnife.knife)
+        const c = weaponCard(selectedKnife.knife, 'showKnives()')
         if (c) cards.push(c)
     } else {
         cards.push({ wname: langObject.sideMenu.knives, sname: langObject.defaultSkin, color: '#3a3a3a', skinned: false, icon: 'fa-khanda', click: 'showKnives()' })
     }
 
-    // Gloves (equipped) — else a card that jumps to glove selection.
+    // Gloves (equipped) — clicking opens the full glove selector to change model too.
     let gloveName = null
     if (selectedGloves && selectedGloves.weapon_defindex) {
         const gd = defByDef(selectedGloves.weapon_defindex)
         gloveName = gd ? gd.weapon_name : null
     }
     if (gloveName) {
-        const c = weaponCard(gloveName)
+        const c = weaponCard(gloveName, 'showGloves()')
         if (c) cards.push(c)
     } else {
         cards.push({ wname: langObject.sideMenu.gloves, sname: langObject.defaultSkin, color: '#3a3a3a', skinned: false, icon: 'fa-mitten', click: 'showGloves()' })
