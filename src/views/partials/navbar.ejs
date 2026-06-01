@@ -9,6 +9,18 @@
             </div>
         </div>
         <div class="nav-item d-flex align-items-center">
+            <!-- Language selector -->
+            <div class="dropdown me-2" data-bs-theme="dark">
+                <button class="btn btn-outline-primary" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="<%= lang.language || 'Language' %>">
+                    <i class="fa-solid fa-globe"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <% var langNames = { en: 'English', 'pt-BR': 'Português', ru: 'Русский', 'zh-CN': '简体中文' }; %>
+                    <% availableLangs.forEach(function(code){ %>
+                        <li><a class="dropdown-item<%= code === langCode ? ' active' : '' %>" href="<%= subdir %>api/lang/<%= code %>"><%= langNames[code] || code %></a></li>
+                    <% }) %>
+                </ul>
+            </div>
             <% if (typeof user == 'undefined') { %>
                 <a class="btn btn-outline-primary my-2 my-sm-0" href="<%= subdir %>api/auth/steam"><%= lang.navLogin %> <i class="bi bi-steam text-secondary ms-1"></i></a>
             <% } else { %>

@@ -27,6 +27,20 @@ const config = require("./config.json");
 config.SUBDIR = "/";
 const lang = require(`./lang/${config.lang}.json`);
 
+// Preload every available language file (keyed by its code = the filename) so
+// the UI language can be switched per request via the language selector.
+const fs = require("fs");
+const langs = {};
+fs.readdirSync(path.join(__dirname, "lang"))
+  .filter((f) => f.endsWith(".json"))
+  .forEach((f) => {
+    langs[f.replace(/\.json$/, "")] = require(`./lang/${f}`);
+  });
+const availableLangs = Object.keys(langs);
+// Language for a request: the user's session choice if valid, else the default.
+const pickLangCode = (req) =>
+  req.session && langs[req.session.lang] ? req.session.lang : config.lang;
+
 const app = new express();
 
 // [TEMP-DEBUG] verbose logging for skin-save debugging, gated behind WP_DEBUG=1
@@ -151,7 +165,9 @@ app.get(config.SUBDIR, (req, res) => {
                             agents: results3[0],
                             musics: results4[0],
                             gloves: results5[0],
-                            lang: lang,
+                            lang: langs[pickLangCode(req)],
+                            langCode: pickLangCode(req),
+                            availableLangs: availableLangs,
                             subdir: config.SUBDIR,
                           });
                         }
@@ -172,10 +188,19 @@ app.get(config.SUBDIR, (req, res) => {
       config: config,
       session: req.session,
       user: req.user,
-      lang: lang,
+      lang: langs[pickLangCode(req)],
+      langCode: pickLangCode(req),
+      availableLangs: availableLangs,
       subdir: config.SUBDIR,
     });
   }
+});
+
+// Switch the UI language: store the choice in the session and return to the
+// page the user came from. Unknown codes are ignored (keeps current language).
+app.get(`${config.SUBDIR}api/lang/:code`, (req, res) => {
+  if (langs[req.params.code]) req.session.lang = req.params.code;
+  res.redirect(req.get("Referer") || config.SUBDIR);
 });
 
 app.get(
