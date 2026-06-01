@@ -45,5 +45,13 @@
     "allEffects":"Все эффекты",
     "allRarities":"Все редкости",
     "stickersFound":"наклеек",
-    "applyToAll":"Применить ко всем"
+    "applyToAll":"Применить ко всем",
+    "inspectBtn":"Ссылка осмотра",
+    "inspectTitle":"Применить ссылку осмотра",
+    "inspectDesc":"Вставьте ссылку осмотра CS2, чтобы применить этот предмет (оружие, окрас, износ, паттерн, наклейки) себе.",
+    "inspectPlaceholder":"steam://run/730//+csgo_econ_action_preview ...",
+    "inspectApply":"Применить",
+    "inspectOk":"Предмет применён!",
+    "inspectInvalid":"Неверная ссылка осмотра.",
+    "inspectUnmasked":"Эту ссылку нельзя прочитать офлайн. Вставьте ссылку, сгенерированную игрой (masked)."
 }

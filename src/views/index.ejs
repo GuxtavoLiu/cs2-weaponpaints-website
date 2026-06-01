@@ -98,6 +98,26 @@
         </div>
     </div>
 
+    <!-- Inspect link modal -->
+    <div class="modal fade" id="inspectModal" tabindex="-1" aria-labelledby="inspectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-light" style="background-color: transparent !important;">
+                <div class="modal-header bg-nav border-dark">
+                    <h5 class="modal-title" id="inspectModalLabel"><%= lang.inspectTitle %></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body bg-color">
+                    <p class="text-secondary"><small><%= lang.inspectDesc %></small></p>
+                    <textarea id="inspectInput" class="form-control" rows="4" placeholder="<%= lang.inspectPlaceholder %>" data-bs-theme="dark"></textarea>
+                    <p id="inspectStatus" class="m-0 mt-2"></p>
+                </div>
+                <div class="modal-footer bg-nav text-light border-dark d-flex justify-content-center">
+                    <button type="button" class="btn btn-outline-primary" id="inspectButton" onclick="applyInspectLink()"><%= lang.inspectApply %></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <%- include('./partials/navbar') %>
 

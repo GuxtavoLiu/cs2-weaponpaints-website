@@ -48,5 +48,13 @@
     "allEffects":"所有效果",
     "allRarities":"所有稀有度",
     "stickersFound":"个印花",
-    "applyToAll":"应用到全部"
+    "applyToAll":"应用到全部",
+    "inspectBtn":"检视链接",
+    "inspectTitle":"应用检视链接",
+    "inspectDesc":"粘贴 CS2 检视链接，将该物品（武器、皮肤、磨损、图案、印花）应用到自己。",
+    "inspectPlaceholder":"steam://run/730//+csgo_econ_action_preview ...",
+    "inspectApply":"应用",
+    "inspectOk":"已应用物品！",
+    "inspectInvalid":"无效的检视链接。",
+    "inspectUnmasked":"该检视链接无法离线读取。请粘贴游戏生成的链接（masked）。"
 }

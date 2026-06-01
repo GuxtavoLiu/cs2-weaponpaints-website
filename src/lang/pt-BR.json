@@ -45,5 +45,13 @@
     "allEffects":"Todos os efeitos",
     "allRarities":"Todas as raridades",
     "stickersFound":"adesivo(s)",
-    "applyToAll":"Aplicar a todos"
+    "applyToAll":"Aplicar a todos",
+    "inspectBtn":"Link de inspeção",
+    "inspectTitle":"Aplicar link de inspeção",
+    "inspectDesc":"Cole um link de inspeção do CS2 para aplicar esse item exato (arma, pintura, float, padrão, adesivos) para você.",
+    "inspectPlaceholder":"steam://run/730//+csgo_econ_action_preview ...",
+    "inspectApply":"Aplicar",
+    "inspectOk":"Item aplicado!",
+    "inspectInvalid":"Link de inspeção inválido.",
+    "inspectUnmasked":"Este link não pode ser lido offline. Cole um link gerado pelo jogo (masked)."
 }

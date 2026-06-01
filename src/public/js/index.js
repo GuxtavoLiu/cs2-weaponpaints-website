@@ -509,6 +509,35 @@ socket.on('params-changed', (data) => {
     document.getElementById('modalButton').innerHTML = langObject.change
 })
 
+// ---- Inspect link ----
+const applyInspectLink = () => {
+    const link = document.getElementById('inspectInput').value.trim()
+    const status = document.getElementById('inspectStatus')
+    if (!link) return
+    status.className = 'm-0 mt-2 text-secondary'
+    status.innerText = '...'
+    document.getElementById('inspectButton').innerHTML =
+        `<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div>`
+    socket.emit('apply-inspect', { steamid: user.id, link: link })
+}
+window.applyInspectLink = applyInspectLink
+
+socket.on('inspect-applied', (data) => {
+    const status = document.getElementById('inspectStatus')
+    document.getElementById('inspectButton').innerHTML = langObject.inspectApply
+    if (data && data.ok) {
+        status.className = 'm-0 mt-2 text-success'
+        status.innerText = langObject.inspectOk
+        // Reload so the skin grid / equipped knife reflect the applied item.
+        setTimeout(() => location.reload(), 800)
+    } else {
+        status.className = 'm-0 mt-2 text-danger'
+        status.innerText = (data && data.error === 'UNMASKED_LINK')
+            ? langObject.inspectUnmasked
+            : langObject.inspectInvalid
+    }
+})
+
 socket.on('workshopRemoved', () => {
     location.reload()
 })

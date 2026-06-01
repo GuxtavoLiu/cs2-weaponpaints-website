@@ -6,6 +6,21 @@ const passportSteam = require("passport-steam");
 const SteamStrategy = passportSteam.Strategy;
 const mysql = require("mysql");
 const path = require("path");
+const { decodeInspectLink } = require("./inspectLink");
+
+// Knife item-definition-index -> weapon_name (for equipping the knife model when
+// an inspect link points at a knife). Mirrors the client-side weaponIds map.
+const KNIFE_DEFINDEX_TO_NAME = {
+  42: "weapon_knife", 59: "weapon_knife_t", 500: "weapon_bayonet",
+  503: "weapon_knife_css", 505: "weapon_knife_flip", 506: "weapon_knife_gut",
+  507: "weapon_knife_karambit", 508: "weapon_knife_m9_bayonet", 509: "weapon_knife_tactical",
+  512: "weapon_knife_falchion", 514: "weapon_knife_survival_bowie", 515: "weapon_knife_butterfly",
+  516: "weapon_knife_push", 517: "weapon_knife_cord", 518: "weapon_knife_canis",
+  519: "weapon_knife_ursus", 520: "weapon_knife_gypsy_jackknife", 521: "weapon_knife_outdoor",
+  522: "weapon_knife_stiletto", 523: "weapon_knife_widowmaker", 525: "weapon_knife_skeleton",
+  526: "weapon_knife_kukri",
+};
+const GLOVE_DEFINDEX_MIN = 4725;
 
 // load configuration files
 const config = require("./config.json");
@@ -386,6 +401,79 @@ io.on("connection", (socket) => {
       [data.steamid, data.weaponid],
       (err, results, fields) => {
         socket.emit("skin-reset", { weaponid: data.weaponid });
+      }
+    );
+  });
+
+  // Apply a full item from a (masked) CS2 inspect link: decode it locally and
+  // write the weapon + paint + wear + seed + stattrak + nametag + stickers into
+  // wp_player_skins for both teams, equipping the knife/glove model when needed.
+  socket.on("apply-inspect", (data) => {
+    dbg("apply-inspect recv", data && data.link);
+    let item;
+    try {
+      item = decodeInspectLink(data.link);
+    } catch (e) {
+      dbg("apply-inspect decode error", e.message);
+      socket.emit("inspect-applied", { ok: false, error: e.message });
+      return;
+    }
+
+    const steamid = data.steamid;
+    const defindex = item.defindex;
+    const paint = Number.isFinite(item.paintindex) ? item.paintindex : 0;
+    const wear = Number.isFinite(item.wear) ? item.wear : 0;
+    const seed = Number.isFinite(item.seed) ? item.seed : 0;
+    const stattrak = item.stattrak ? 1 : 0;
+    const nametag = item.nametag || null;
+
+    // Map decoded stickers to the 5 slot columns, preserving the link's exact
+    // position so positioned stickers render as inspected.
+    const num = (n) => (Number.isFinite(n) ? n : 0);
+    const stk = ["0;0;0;0;0;0;0", "0;0;0;0;0;0;0", "0;0;0;0;0;0;0", "0;0;0;0;0;0;0", "0;0;0;0;0;0;0"];
+    for (const s of item.stickers || []) {
+      if (s.slot >= 0 && s.slot < 5 && s.id > 0) {
+        stk[s.slot] = `${s.id};0;${num(s.offX)};${num(s.offY)};${num(s.wear)};${num(s.scale)};${num(s.rotation)}`;
+      }
+    }
+
+    const rowValues = (team) => [steamid, team, defindex, paint, wear, seed, stattrak, nametag, ...stk];
+    connection.query(
+      "INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id, weapon_wear, weapon_seed, weapon_stattrak, weapon_nametag, weapon_sticker_0, weapon_sticker_1, weapon_sticker_2, weapon_sticker_3, weapon_sticker_4) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id), weapon_wear = VALUES(weapon_wear), weapon_seed = VALUES(weapon_seed), weapon_stattrak = VALUES(weapon_stattrak), weapon_nametag = VALUES(weapon_nametag), weapon_sticker_0 = VALUES(weapon_sticker_0), weapon_sticker_1 = VALUES(weapon_sticker_1), weapon_sticker_2 = VALUES(weapon_sticker_2), weapon_sticker_3 = VALUES(weapon_sticker_3), weapon_sticker_4 = VALUES(weapon_sticker_4)",
+      [...rowValues(2), ...rowValues(3)],
+      (err) => {
+        if (err) {
+          dbg("apply-inspect skins SQL ERROR", err.message);
+          socket.emit("inspect-applied", { ok: false, error: "DB_ERROR" });
+          return;
+        }
+
+        // Equip the matching knife/glove model so the item actually shows up.
+        const finish = () =>
+          socket.emit("inspect-applied", {
+            ok: true,
+            weaponid: defindex,
+            paintid: paint,
+            isKnife: !!KNIFE_DEFINDEX_TO_NAME[defindex],
+            isGlove: defindex >= GLOVE_DEFINDEX_MIN,
+          });
+
+        if (KNIFE_DEFINDEX_TO_NAME[defindex]) {
+          const knife = KNIFE_DEFINDEX_TO_NAME[defindex];
+          connection.query(
+            "INSERT INTO wp_player_knife (steamid, weapon_team, knife) VALUES (?, 2, ?), (?, 3, ?) ON DUPLICATE KEY UPDATE knife = VALUES(knife)",
+            [steamid, knife, steamid, knife],
+            finish
+          );
+        } else if (defindex >= GLOVE_DEFINDEX_MIN) {
+          connection.query(
+            "INSERT INTO wp_player_gloves (steamid, weapon_team, weapon_defindex) VALUES (?, 2, ?), (?, 3, ?) ON DUPLICATE KEY UPDATE weapon_defindex = VALUES(weapon_defindex)",
+            [steamid, defindex, steamid, defindex],
+            finish
+          );
+        } else {
+          finish();
+        }
       }
     );
   });
