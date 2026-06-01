@@ -12,6 +12,7 @@
     "PROTOCOL": "http",
     "PORT": 27075,
     "STEAMAPIKEY": "Your Steam Web API Key",
+    "secret": "optional: long random string to sign session cookies (a random one is generated on each restart if omitted)",
     "connect": {
         "show": true,
         "url": "steam://connect/[IP:PORT]?appid=730/[Server password if needed]"
