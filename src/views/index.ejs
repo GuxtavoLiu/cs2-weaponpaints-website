@@ -162,6 +162,11 @@
                 <img src="icons/weapon_negev.svg" style="filter: invert();" width="35px">
                 <p class="p-0 m-0 mx-auto"><small><%= lang.sideMenu.heavy %></small></p>
             </button>
+
+            <button type="button" class="btn btn-outline-primary my-1 mx-1 d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#inspectModal">
+                <i class="fa-solid fa-link ms-1 me-2 my-auto"></i>
+                <p class="p-0 m-0 mx-auto"><small><%= lang.inspectBtn %></small></p>
+            </button>
         </div>
         <div class="row">
             <div class="col-2 rounded p-0 d-none d-lg-block">
@@ -253,7 +258,16 @@
                             <span class="edge"></span>
                             <div class="front d-flex" id="sideBtnTAgents">
                                     <i class="fa-solid fa-person-rifle ms-3 me-2 my-auto"></i>
-                                    <p class="m-0 mx-auto"><%= lang.sideMenu.tAgents %></p>                 
+                                    <p class="m-0 mx-auto"><%= lang.sideMenu.tAgents %></p>
+                            </div>
+                        </button>
+
+                        <button class="pushable" type="button" data-bs-toggle="modal" data-bs-target="#inspectModal">
+                            <span class="shadow"></span>
+                            <span class="edge"></span>
+                            <div class="front d-flex" id="sideBtnInspect">
+                                    <i class="fa-solid fa-link ms-3 me-2 my-auto"></i>
+                                    <p class="m-0 mx-auto"><%= lang.inspectBtn %></p>
                             </div>
                         </button>
 
