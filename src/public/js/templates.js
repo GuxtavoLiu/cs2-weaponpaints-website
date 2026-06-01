@@ -664,3 +664,118 @@ window.showMusics = () =>{
     });
 
 }
+
+// ---- Loadout overview ----
+// Curated "default" set (knife + gloves are added separately, first):
+const LOADOUT_DEFAULT_GUNS = ['weapon_ak47', 'weapon_m4a1', 'weapon_m4a1_silencer', 'weapon_awp', 'weapon_glock', 'weapon_usp_silencer', 'weapon_deagle']
+let loadoutShowAll = false
+
+const loadoutEsc = (s) => String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;')
+
+const renderLoadoutGrid = () => {
+    const grid = document.getElementById('loadoutGrid')
+    if (!grid) return
+
+    const skins = (typeof selectedSkins !== 'undefined' && Array.isArray(selectedSkins)) ? selectedSkins : []
+    const findSkin = (defindex, paint) => skinsObject.find(w => weaponIds[w.weapon.id] == defindex && w.paint_index == paint)
+    const defByName = (name) => defaultsObject.find(d => d.weapon_name == name)
+    const defByDef = (defindex) => defaultsObject.find(d => Number(d.weapon_defindex) == Number(defindex))
+
+    // Build a card descriptor for a weapon (by weapon_name), showing its equipped
+    // skin or, if none, the default weapon.
+    const weaponCard = (weaponName) => {
+        const def = defByName(weaponName)
+        if (!def) return null
+        const defindex = Number(def.weapon_defindex)
+        const row = skins.find(s => s.weapon_defindex == defindex)
+        const sk = row ? findSkin(defindex, row.weapon_paint_id) : null
+        const isMelee = def.weapon_type == 'sfui_invpanel_filter_melee'
+        return {
+            img: sk ? sk.image : def.image,
+            wname: sk ? sk.weapon.name : def.paint_name,
+            sname: sk ? ((typeof sk.phase !== 'undefined') ? `${sk.pattern.name} (${sk.phase})` : sk.pattern.name) : langObject.defaultSkin,
+            color: sk ? (isMelee ? '#caab05' : (sk.rarity ? sk.rarity.color : '#777')) : '#3a3a3a',
+            skinned: !!sk,
+            st: sk ? !!sk.stattrak : false,
+            paint: sk ? sk.paint_index : 0,
+            weaponName: weaponName,
+            click: `knifeSkins('${loadoutEsc(weaponName)}')`
+        }
+    }
+
+    const cards = []
+
+    // Knife (equipped) — else a card that jumps to knife selection.
+    if (selectedKnife && selectedKnife.knife) {
+        const c = weaponCard(selectedKnife.knife)
+        if (c) cards.push(c)
+    } else {
+        cards.push({ wname: langObject.sideMenu.knives, sname: langObject.defaultSkin, color: '#3a3a3a', skinned: false, icon: 'fa-khanda', click: 'showKnives()' })
+    }
+
+    // Gloves (equipped) — else a card that jumps to glove selection.
+    let gloveName = null
+    if (selectedGloves && selectedGloves.weapon_defindex) {
+        const gd = defByDef(selectedGloves.weapon_defindex)
+        gloveName = gd ? gd.weapon_name : null
+    }
+    if (gloveName) {
+        const c = weaponCard(gloveName)
+        if (c) cards.push(c)
+    } else {
+        cards.push({ wname: langObject.sideMenu.gloves, sname: langObject.defaultSkin, color: '#3a3a3a', skinned: false, icon: 'fa-mitten', click: 'showGloves()' })
+    }
+
+    // Guns
+    const gunNames = loadoutShowAll
+        ? defaultsObject
+            .filter(d => d.weapon_type !== 'sfui_invpanel_filter_melee' && d.weapon_type !== 'sfui_invpanel_filter_gloves')
+            .map(d => d.weapon_name)
+        : LOADOUT_DEFAULT_GUNS
+    gunNames.forEach(n => { const c = weaponCard(n); if (c) cards.push(c) })
+
+    grid.innerHTML = cards.map(c => `
+        <div class="col-6 col-sm-4 col-md-3 col-lg-2 p-2">
+            <div class="loadout-card rounded-3 h-100 d-flex flex-column p-2" style="border-top: 3px solid ${c.color};">
+                ${c.skinned ? `<button class="loadout-gear" title="${langObject.change}" onclick="event.stopPropagation(); editModal('${loadoutEsc(c.img)}','${loadoutEsc(c.wname)}','${loadoutEsc(c.sname)}','${loadoutEsc(c.weaponName)}',${c.paint},${c.st})" data-bs-toggle="modal" data-bs-target="#patternFloat"><i class="fa-solid fa-gear"></i></button>` : ''}
+                <div class="loadout-clickable d-flex flex-column flex-grow-1" onclick="${c.click}">
+                    <p class="m-0 text-truncate"><small class="text-secondary">${c.wname}</small></p>
+                    <p class="m-0 text-truncate" style="color: ${c.color};"><small>${c.sname}</small></p>
+                    ${c.img
+                        ? `<img src="${c.img}" class="loadout-img my-2 mx-auto" loading="lazy" alt="">`
+                        : `<div class="loadout-img my-2 mx-auto d-flex align-items-center justify-content-center text-secondary"><i class="fa-solid ${c.icon || 'fa-plus'} fa-2x"></i></div>`}
+                </div>
+            </div>
+        </div>
+    `).join('')
+}
+
+window.toggleLoadoutMode = () => {
+    loadoutShowAll = document.getElementById('loadoutToggle').checked
+    const label = document.getElementById('loadoutToggleLabel')
+    if (label) label.innerText = loadoutShowAll ? langObject.loadoutShowAll : langObject.loadoutShowDefault
+    renderLoadoutGrid()
+}
+
+window.showLoadout = () => {
+    const container = document.getElementById('skinsContainer')
+    if (!container) return
+    container.innerHTML = `
+        <div class="col-12 d-flex justify-content-between align-items-center mb-2 flex-wrap">
+            <h3 class="m-0">${langObject.loadoutTitle || 'Loadout'}</h3>
+            <div class="form-check form-switch m-0 d-flex align-items-center" data-bs-theme="dark">
+                <input class="form-check-input me-2" type="checkbox" role="switch" id="loadoutToggle" ${loadoutShowAll ? 'checked' : ''} onchange="toggleLoadoutMode()">
+                <label class="form-check-label" for="loadoutToggle" id="loadoutToggleLabel">${loadoutShowAll ? (langObject.loadoutShowAll || 'Show all') : (langObject.loadoutShowDefault || 'Show default')}</label>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="row" id="loadoutGrid"></div>
+        </div>
+    `
+    renderLoadoutGrid()
+}
+
+// Show the loadout as the landing screen once the data is ready.
+if (typeof user !== 'undefined') {
+    showLoadout()
+}

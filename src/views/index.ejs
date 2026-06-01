@@ -127,6 +127,11 @@
 
     <div class="container text-light mt-3">
         <div class="d-block d-lg-none list-group list-group-horizontal position-relative overflow-auto d-flex justify-content-between bg-nav p-2 rounded">
+            <button onclick="showLoadout()" class="btn btn-outline-primary d-flex my-1 mx-1 align-items-center">
+                <i class="fa-solid fa-layer-group ms-1 me-2 my-auto"></i>
+                <p class="p-0 m-0 mx-auto"><small><%= lang.sideMenu.loadout %></small></p>
+            </button>
+
             <button onclick="showKnives()" id="sideBtnKnives" class="btn btn-outline-primary d-flex my-1 mx-1 align-items-center" data-type="sideBtn" data-btn-type="knives">
                 <img src="icons/weapon_knife_karambit.svg" style="filter: invert();" width="35px">
                 <p class="p-0 m-0 mx-auto"><small><%= lang.sideMenu.knives %></small></p>
@@ -172,12 +177,21 @@
             <div class="col-2 rounded p-0 d-none d-lg-block">
                 <div class="sticky-top" style="top: 10px;">
                     <div class="bg-nav rounded p-0 p-2 pb-0">
+                        <button class="pushable" onclick="showLoadout()">
+                            <span class="shadow"></span>
+                            <span class="edge"></span>
+                            <div class="front d-flex" id="sideBtnLoadout">
+                                    <i class="fa-solid fa-layer-group ms-3 me-2 my-auto"></i>
+                                    <p class="m-0 mx-auto"><%= lang.sideMenu.loadout %></p>
+                            </div>
+                        </button>
+
                         <button class="pushable" onclick="showKnives()" data-type="sideBtn" data-btn-type="knives">
                             <span class="shadow"></span>
                             <span class="edge"></span>
                             <div class="front d-flex" id="sideBtnKnives">
                                     <img src="icons/weapon_knife_karambit.svg" class="ms-2" style="filter: invert();" width="35px">
-                                    <p class="m-0 mx-auto"><%= lang.sideMenu.knives %></p>                 
+                                    <p class="m-0 mx-auto"><%= lang.sideMenu.knives %></p>
                             </div>
                         </button>
 

@@ -5,6 +5,7 @@
     "connect": "Conecte-se ao servidor",
     "profile": "Profile",
     "sideMenu": {
+        "loadout": "Loadout",
         "knives": "Facas",
         "gloves": "Luvas",
         "pistols": "Pistolas",
@@ -16,6 +17,10 @@
         "tAgents": "T Agents"
     },
     "selectCategory": "Selecione a Categoria",
+    "loadoutTitle": "Seu loadout",
+    "loadoutEmpty": "Você ainda não personalizou nenhum item. Escolha uma categoria à esquerda.",
+    "loadoutShowDefault": "Mostrar padrão",
+    "loadoutShowAll": "Mostrar tudo",
     "needLogin": "Você precisa fazer login",
     "viaSteam": "via Steam",
     "change": "Alterar",

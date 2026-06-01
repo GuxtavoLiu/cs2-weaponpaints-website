@@ -5,6 +5,7 @@
     "connect": "Подключиться к серверу",
     "profile": "Профиль",
     "sideMenu": {
+        "loadout": "Снаряжение",
         "knives": "Ножи",
         "gloves": "Перчатки",
         "pistols": "Пистолеты",
@@ -16,6 +17,10 @@
         "tAgents": "Агенты CT"
     },
     "selectCategory": "Выберите категорию",
+    "loadoutTitle": "Ваше снаряжение",
+    "loadoutEmpty": "Вы ещё ничего не настроили. Выберите категорию слева.",
+    "loadoutShowDefault": "Показать основное",
+    "loadoutShowAll": "Показать всё",
     "needLogin": "Нужно войти",
     "viaSteam": "через Steam",
     "change": "Сменить",

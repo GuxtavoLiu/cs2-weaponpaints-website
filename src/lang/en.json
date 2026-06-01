@@ -6,6 +6,7 @@
     "connect": "Connect to server",
     "profile": "Profile",
     "sideMenu": {
+        "loadout": "Loadout",
         "knives": "Knives",
         "gloves": "Gloves",
         "musics": "Musics",
@@ -19,6 +20,10 @@
         "utility": "Zeus"
     },
     "selectCategory": "Select category",
+    "loadoutTitle": "Your loadout",
+    "loadoutEmpty": "You haven't customized any items yet. Pick a category on the left.",
+    "loadoutShowDefault": "Show default",
+    "loadoutShowAll": "Show all",
     "needLogin": "You need to login",
     "viaSteam": "via Steam",
     "change": "Change",

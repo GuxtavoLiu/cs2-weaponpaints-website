@@ -6,6 +6,7 @@
     "connect": "连接私服",
     "profile": "主页",
     "sideMenu": {
+        "loadout": "装备",
         "knives": "刀具",
         "gloves": "手套",
         "musics": "音乐盒",
@@ -19,6 +20,10 @@
         "utility": "电击枪"
     },
     "selectCategory": "请选择一个分类",
+    "loadoutTitle": "你的装备",
+    "loadoutEmpty": "你还没有自定义任何物品。请在左侧选择一个分类。",
+    "loadoutShowDefault": "显示默认",
+    "loadoutShowAll": "显示全部",
     "needLogin": "你需要先登陆，才能设置皮肤。",
     "viaSteam": "通过Steam登陆",
     "change": "修改",
