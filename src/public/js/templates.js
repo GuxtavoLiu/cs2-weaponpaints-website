@@ -605,6 +605,7 @@ window.showAgents = (type) => {
         }
     });
 
+    window.mountSkinsToolbar()
 }
 
 window.showMusics = () =>{
@@ -669,6 +670,98 @@ window.showMusics = () =>{
 // Curated "default" set (knife + gloves are added separately, first):
 const LOADOUT_DEFAULT_GUNS = ['weapon_ak47', 'weapon_m4a1', 'weapon_m4a1_silencer', 'weapon_awp', 'weapon_glock', 'weapon_usp_silencer', 'weapon_deagle']
 let loadoutShowAll = false
+
+// ---- Card size cycler ----
+// A class on #skinsContainer (cards-lg/md/sm) overrides the grid column width.
+// It persists across every view because all views reuse the same container node,
+// and across reloads via localStorage. No class = each view's native Bootstrap
+// columns (the default until the user picks a size). Cycles big -> medium -> small.
+const CARD_SIZES = ['lg', 'md', 'sm']
+const CARD_SIZE_ICON = { lg: 'fa-table-cells-large', md: 'fa-table-cells', sm: 'fa-border-all' }
+const getCardSize = () => {
+    const s = localStorage.getItem('cardSize')
+    return CARD_SIZES.includes(s) ? s : ''
+}
+const applyCardSize = (size) => {
+    const c = document.getElementById('skinsContainer')
+    if (c) {
+        c.classList.remove('cards-lg', 'cards-md', 'cards-sm')
+        if (size) c.classList.add('cards-' + size)
+    }
+    const btn = document.getElementById('cardSizeBtn')
+    if (btn) btn.querySelector('i').className = 'fa-solid ' + (CARD_SIZE_ICON[size] || 'fa-table-cells')
+}
+window.cycleCardSize = () => {
+    const cur = getCardSize()
+    const next = CARD_SIZES[cur ? (CARD_SIZES.indexOf(cur) + 1) % CARD_SIZES.length : 0]
+    localStorage.setItem('cardSize', next)
+    applyCardSize(next)
+}
+// Apply any saved size as soon as the module loads.
+applyCardSize(getCardSize())
+
+// ---- Skins page toolbar: card size + elastic text search + sort ----
+// mountSkinsToolbar() is called by the category/skin render functions after they
+// fill #skinsContainer. It works on the rendered card elements (DOM), so it's
+// agnostic to which render produced them. Search mirrors the sticker search
+// (whitespace tokens, every token must appear in the card's text). Sort reorders
+// the cards in place; "default" restores the original render order.
+const SKIN_RARITY_RANK = { contraband: 8, gold: 7, ancient: 6, legendary: 5, mythical: 4, rare: 3, uncommon: 2, common: 1 }
+const cardRarityRank = (el) => {
+    for (const r in SKIN_RARITY_RANK) { if (el.querySelector('.card-' + r)) return SKIN_RARITY_RANK[r] }
+    return 0
+}
+let skinsSearchTimer
+const applySkinsFilterSort = () => {
+    const container = document.getElementById('skinsContainer')
+    if (!container || !container._skinCards) return
+    const tokens = (document.getElementById('skinsSearch')?.value || '').toLowerCase().split(/\s+/).filter(Boolean)
+    const sort = (document.getElementById('skinsSort') || {}).value || 'default'
+    let shown = 0
+    container._skinCards.forEach((c) => {
+        const ok = tokens.every((t) => c.text.includes(t))
+        c.el.style.display = ok ? '' : 'none'
+        if (ok) shown++
+    })
+    const ordered = container._skinCards.slice()
+    if (sort === 'name-asc') ordered.sort((a, b) => a.text.localeCompare(b.text))
+    else if (sort === 'name-desc') ordered.sort((a, b) => b.text.localeCompare(a.text))
+    else if (sort === 'rarity-desc') ordered.sort((a, b) => b.rarity - a.rarity)
+    else if (sort === 'rarity-asc') ordered.sort((a, b) => a.rarity - b.rarity)
+    ordered.forEach((c) => container.appendChild(c.el))
+    const countEl = document.getElementById('skinsCount')
+    if (countEl) countEl.innerText = String(shown)
+}
+window.onSkinsSearchInput = () => {
+    clearTimeout(skinsSearchTimer)
+    skinsSearchTimer = setTimeout(applySkinsFilterSort, 120)
+}
+window.onSkinsSortChange = () => applySkinsFilterSort()
+window.mountSkinsToolbar = () => {
+    const container = document.getElementById('skinsContainer')
+    if (!container) return
+    const cards = Array.from(container.children).filter((c) => !c.classList.contains('skins-toolbar'))
+    if (!cards.length) return
+    const L = (typeof langObject !== 'undefined') ? langObject : {}
+    const bar = document.createElement('div')
+    bar.className = 'skins-toolbar col-12 d-flex flex-wrap align-items-center gap-2 mb-3'
+    bar.innerHTML = `
+        <button type="button" id="cardSizeBtn" class="btn btn-outline-primary btn-sm" onclick="cycleCardSize()" title="${L.cardSize || 'Card size'}"><i class="fa-solid fa-table-cells"></i></button>
+        <input type="text" id="skinsSearch" class="form-control form-control-sm" style="max-width:260px;" placeholder="${L.search || 'Search'}" oninput="onSkinsSearchInput()" data-bs-theme="dark" autocomplete="off">
+        <select id="skinsSort" class="form-select form-select-sm" style="max-width:210px;" onchange="onSkinsSortChange()" data-bs-theme="dark">
+            <option value="default">${L.sortDefault || 'Default order'}</option>
+            <option value="name-asc">${L.sortNameAsc || 'Name (A-Z)'}</option>
+            <option value="name-desc">${L.sortNameDesc || 'Name (Z-A)'}</option>
+            <option value="rarity-desc">${L.sortRarityHigh || 'Rarity (high first)'}</option>
+            <option value="rarity-asc">${L.sortRarityLow || 'Rarity (low first)'}</option>
+        </select>
+        <small class="text-secondary ms-auto" id="skinsCount"></small>
+    `
+    container.prepend(bar)
+    container._skinCards = cards.map((el) => ({ el, text: (el.textContent || '').toLowerCase().replace(/\s+/g, ' '), rarity: cardRarityRank(el) }))
+    applyCardSize(getCardSize())
+    applySkinsFilterSort()
+}
 
 const loadoutEsc = (s) => String(s == null ? '' : s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;')
 
@@ -753,8 +846,9 @@ const renderLoadoutGrid = () => {
 
 window.toggleLoadoutMode = () => {
     loadoutShowAll = document.getElementById('loadoutToggle').checked
-    const label = document.getElementById('loadoutToggleLabel')
-    if (label) label.innerText = loadoutShowAll ? langObject.loadoutShowAll : langObject.loadoutShowDefault
+    // Label is static ("Show all"): unchecked = default loadout, checked = all
+    // weapons. Describing the action (not the current state) avoids the toggle
+    // reading like "click to show default" when default is already shown.
     renderLoadoutGrid()
 }
 
@@ -764,9 +858,12 @@ window.showLoadout = () => {
     container.innerHTML = `
         <div class="col-12 d-flex justify-content-between align-items-center mb-2 flex-wrap">
             <h3 class="m-0">${langObject.loadoutTitle || 'Loadout'}</h3>
-            <div class="form-check form-switch m-0 d-flex align-items-center" data-bs-theme="dark">
-                <input class="form-check-input me-2" type="checkbox" role="switch" id="loadoutToggle" ${loadoutShowAll ? 'checked' : ''} onchange="toggleLoadoutMode()">
-                <label class="form-check-label" for="loadoutToggle" id="loadoutToggleLabel">${loadoutShowAll ? (langObject.loadoutShowAll || 'Show all') : (langObject.loadoutShowDefault || 'Show default')}</label>
+            <div class="d-flex align-items-center gap-3">
+                <button type="button" id="cardSizeBtn" class="btn btn-outline-primary btn-sm" onclick="cycleCardSize()" title="${langObject.cardSize || 'Card size'}"><i class="fa-solid fa-table-cells"></i></button>
+                <div class="form-check form-switch m-0 d-flex align-items-center" data-bs-theme="dark">
+                    <input class="form-check-input me-2" type="checkbox" role="switch" id="loadoutToggle" ${loadoutShowAll ? 'checked' : ''} onchange="toggleLoadoutMode()">
+                    <label class="form-check-label" for="loadoutToggle" id="loadoutToggleLabel">${langObject.loadoutShowAll || 'Show all'}</label>
+                </div>
             </div>
         </div>
         <div class="col-12">
@@ -774,6 +871,7 @@ window.showLoadout = () => {
         </div>
     `
     renderLoadoutGrid()
+    applyCardSize(getCardSize())
 }
 
 // Show the loadout as the landing screen once the data is ready.

@@ -138,6 +138,7 @@ const showDefaults = (type) => {
       }
     });
   }
+  window.mountSkinsToolbar();
 };
 
 const showKnives = () => {
@@ -556,4 +557,5 @@ window.knifeSkins = (knifeType) => {
       document.getElementById("skinsContainer").appendChild(card);
     }
   });
+  window.mountSkinsToolbar();
 };

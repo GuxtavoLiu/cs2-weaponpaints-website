@@ -980,3 +980,40 @@ li {
         min-width: 0;
     }
 }
+
+/* ---- Card size cycler ---- */
+/* The cardSizeBtn cycles a class on #skinsContainer that overrides how many
+   cards fit per row. Only takes effect on >= md screens, so the phone layout
+   keeps its responsive defaults. Covers both category grids (cards are direct
+   children of #skinsContainer) and the loadout grid (cards live in #loadoutGrid).
+   The :not(.col-12) guard leaves the loadout header/wrapper columns alone. */
+@media (min-width: 768px) {
+    #skinsContainer.cards-lg > [class*="col-"]:not(.col-12),
+    #skinsContainer.cards-lg #loadoutGrid > [class*="col-"] {
+        flex: 0 0 auto;
+        width: 33.3333%;
+        max-width: none;
+    }
+    #skinsContainer.cards-md > [class*="col-"]:not(.col-12),
+    #skinsContainer.cards-md #loadoutGrid > [class*="col-"] {
+        flex: 0 0 auto;
+        width: 25%;
+        max-width: none;
+    }
+    #skinsContainer.cards-sm > [class*="col-"]:not(.col-12),
+    #skinsContainer.cards-sm #loadoutGrid > [class*="col-"] {
+        flex: 0 0 auto;
+        width: 16.6667%;
+        max-width: none;
+    }
+
+    /* Scale the skin image height with the card too — otherwise only the empty
+       card area grows and bigger cards don't actually help you see the skin.
+       (.weapon-img = category cards, .loadout-img = loadout overview cards.) */
+    #skinsContainer.cards-lg .weapon-img,
+    #skinsContainer.cards-lg .loadout-img { height: 190px; }
+    #skinsContainer.cards-md .weapon-img,
+    #skinsContainer.cards-md .loadout-img { height: 140px; }
+    #skinsContainer.cards-sm .weapon-img,
+    #skinsContainer.cards-sm .loadout-img { height: 95px; }
+}
