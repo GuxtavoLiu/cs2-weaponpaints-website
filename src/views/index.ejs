@@ -58,17 +58,18 @@
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Large sticker picker modal (opened on top of the skin modal) -->
-    <div class="modal fade" id="stickerPickerModal" tabindex="-1" aria-labelledby="stickerPickerModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
-            <div class="modal-content text-light" style="background-color: transparent !important;">
-                <div class="modal-header bg-nav border-dark">
-                    <h5 class="modal-title" id="stickerPickerModalLabel"><%= lang.selectSticker %> <span id="stickerPickerSlotLabel" class="text-secondary"></span></h5>
+        <!-- Sticker picker overlay. Kept INSIDE #patternFloat (sibling of the
+             modal-dialog) so Bootstrap's focus-trap treats it as in-modal and
+             lets the search field receive keystrokes; position:fixed makes it
+             cover the whole viewport regardless of the parent. -->
+        <div id="stickerPicker" class="sticker-picker-overlay" onclick="onStickerOverlayClick(event)">
+            <div class="sticker-picker-dialog bg-color text-light">
+                <div class="sticker-picker-header bg-nav">
+                    <h5 class="m-0"><%= lang.selectSticker %> <span id="stickerPickerSlotLabel" class="text-secondary"></span></h5>
                     <button type="button" class="btn-close btn-close-white" onclick="closeStickerPicker()" aria-label="Close"></button>
                 </div>
-                <div class="modal-body bg-color">
+                <div class="sticker-picker-body">
                     <!-- Filter bar -->
                     <div class="row g-2 mb-3 sticker-filter-bar">
                         <div class="col-12 col-md">
@@ -92,7 +93,6 @@
             </div>
         </div>
     </div>
-
 
 
     <%- include('./partials/navbar') %>

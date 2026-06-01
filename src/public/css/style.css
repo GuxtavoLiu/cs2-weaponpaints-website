@@ -792,9 +792,38 @@ li {
 .sticker-wear {
     width: 70px;
 }
-/* Big sticker picker modal */
-#stickerPickerModal {
-    z-index: 1065; /* sit above the skin modal (1055) when stacked */
+/* Big sticker picker overlay (lives inside #patternFloat) */
+.sticker-picker-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1065; /* above the skin modal (1055) */
+    background-color: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.sticker-picker-overlay.show {
+    display: flex;
+}
+.sticker-picker-dialog {
+    width: min(1100px, 95vw);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.sticker-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+}
+.sticker-picker-body {
+    padding: 16px;
+    overflow-y: auto;
 }
 .sticker-filter-bar .form-select,
 .sticker-filter-bar .form-control {

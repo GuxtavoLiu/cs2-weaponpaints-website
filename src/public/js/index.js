@@ -167,7 +167,6 @@ let stickersById = null            // { id: sticker }
 let stickerSlots = new Array(STICKER_SLOTS).fill(0) // selected sticker id per slot (0 = empty)
 let activeStickerSlot = 0
 let stickersLoadPromise = null
-let stickerPickerModalInstance = null
 let stickerFiltersBuilt = false
 
 const ensureStickersLoaded = () => {
@@ -297,34 +296,44 @@ const openStickerPicker = (slot) => {
         document.getElementById('stickerFilterEffect').value = ''
         document.getElementById('stickerFilterRarity').value = ''
         renderStickerResults()
-
-        if (!stickerPickerModalInstance) {
-            stickerPickerModalInstance = new bootstrap.Modal(document.getElementById('stickerPickerModal'))
-        }
-        stickerPickerModalInstance.show()
-        // Stacked modal: lift this modal + its backdrop above the skin modal.
-        setTimeout(() => {
-            const backdrops = document.querySelectorAll('.modal-backdrop')
-            const last = backdrops[backdrops.length - 1]
-            if (last) last.style.zIndex = 1060
-            document.getElementById('stickerSearch').focus()
-        }, 0)
+        document.getElementById('stickerPicker').classList.add('show')
+        // Defer focus so the show transition doesn't swallow it.
+        setTimeout(() => document.getElementById('stickerSearch').focus(), 30)
     })
 }
 
 const closeStickerPicker = () => {
-    if (stickerPickerModalInstance) stickerPickerModalInstance.hide()
+    const el = document.getElementById('stickerPicker')
+    if (el) el.classList.remove('show')
 }
+
+// Close when clicking the dimmed area outside the dialog.
+const onStickerOverlayClick = (event) => {
+    if (event.target.id === 'stickerPicker') closeStickerPicker()
+}
+
+// Close on Escape (only when the picker is the topmost thing open).
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const el = document.getElementById('stickerPicker')
+        if (el && el.classList.contains('show')) {
+            e.stopPropagation()
+            closeStickerPicker()
+        }
+    }
+}, true)
 
 let stickerSearchTimer
 const onStickerSearchInput = () => {
     clearTimeout(stickerSearchTimer)
-    stickerSearchTimer = setTimeout(renderStickerResults, 150)
+    stickerSearchTimer = setTimeout(renderStickerResults, 120)
 }
 
 const renderStickerResults = () => {
     if (!stickersData) return
-    const q = document.getElementById('stickerSearch').value.trim().toLowerCase()
+    // Elastic search: case-insensitive, every whitespace-separated token must
+    // appear somewhere in the name (so "kato nuke" finds "... | Katowice 2014 | Nuke").
+    const tokens = document.getElementById('stickerSearch').value.toLowerCase().split(/\s+/).filter(Boolean)
     const fType = document.getElementById('stickerFilterType').value
     const fEffect = document.getElementById('stickerFilterEffect').value
     const fRarity = document.getElementById('stickerFilterRarity').value
@@ -333,7 +342,12 @@ const renderStickerResults = () => {
     let total = 0
     for (let i = 0; i < stickersData.length; i++) {
         const s = stickersData[i]
-        if (q && !s.name.toLowerCase().includes(q)) continue
+        if (tokens.length) {
+            const hay = s.name.toLowerCase()
+            let ok = true
+            for (let t = 0; t < tokens.length; t++) { if (!hay.includes(tokens[t])) { ok = false; break } }
+            if (!ok) continue
+        }
         if (fType && s.type !== fType) continue
         if (fEffect && s.effect !== fEffect) continue
         if (fRarity && s.rarityName !== fRarity) continue
@@ -369,8 +383,10 @@ const clearSticker = (slot) => {
 
 window.openStickerPicker = openStickerPicker
 window.closeStickerPicker = closeStickerPicker
+window.onStickerOverlayClick = onStickerOverlayClick
 window.onStickerSearchInput = onStickerSearchInput
 window.onStickerWearInput = onStickerWearInput
+window.renderStickerResults = renderStickerResults
 window.selectSticker = selectSticker
 window.clearSticker = clearSticker
 
