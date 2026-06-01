@@ -40,5 +40,9 @@
     "stickerWear":"Desgaste",
     "searchStickers":"Buscar adesivos...",
     "selectSticker":"Selecione um adesivo",
-    "clear":"Limpar"
+    "clear":"Limpar",
+    "allTypes":"Todos os tipos",
+    "allEffects":"Todos os efeitos",
+    "allRarities":"Todas as raridades",
+    "stickersFound":"adesivo(s)"
 }

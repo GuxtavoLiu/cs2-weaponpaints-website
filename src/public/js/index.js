@@ -162,11 +162,13 @@ const weaponIds = {
 const STICKER_EMPTY = '0;0;0;0;0;0;0'
 const STICKER_SLOTS = 5
 
-let stickersData = null            // [{id, name, image}]
-let stickersById = null            // { id: {id, name, image} }
+let stickersData = null            // [{id, name, image, rarity, rarityName, effect, type}]
+let stickersById = null            // { id: sticker }
 let stickerSlots = new Array(STICKER_SLOTS).fill(0) // selected sticker id per slot (0 = empty)
 let activeStickerSlot = 0
 let stickersLoadPromise = null
+let stickerPickerModalInstance = null
+let stickerFiltersBuilt = false
 
 const ensureStickersLoaded = () => {
     if (stickersData) return Promise.resolve(stickersData)
@@ -257,20 +259,61 @@ const onStickerWearInput = (slot) => {
     document.getElementById(`stickerWearVal-${slot}`).innerText = v.toFixed(2)
 }
 
+// How many results to render at once (the full list is 10k+, so we cap to keep
+// the DOM light; the count label still reports the true total of matches).
+const STICKER_RENDER_CAP = 300
+
+// Populate the type / effect / rarity filter dropdowns from the dataset (once).
+const buildStickerFilters = () => {
+    if (stickerFiltersBuilt || !stickersData) return
+    const uniq = (key) => [...new Set(stickersData.map(s => s[key]).filter(Boolean))].sort()
+
+    const fill = (selId, allLabel, values) => {
+        const sel = document.getElementById(selId)
+        sel.innerHTML = `<option value="">${allLabel}</option>` +
+            values.map(v => `<option value="${v}">${v}</option>`).join('')
+    }
+    fill('stickerFilterType', langObject.allTypes || 'All types', uniq('type'))
+    fill('stickerFilterEffect', langObject.allEffects || 'All effects', uniq('effect'))
+
+    // Rarity ordered by in-game tier (lowest -> highest) rather than alphabetically.
+    const rarityOrder = ['Default', 'Base Grade', 'High Grade', 'Remarkable', 'Exotic', 'Extraordinary', 'Contraband']
+    const rarities = uniq('rarityName').sort((a, b) => {
+        const ia = rarityOrder.indexOf(a), ib = rarityOrder.indexOf(b)
+        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
+    })
+    fill('stickerFilterRarity', langObject.allRarities || 'All rarities', rarities)
+
+    stickerFiltersBuilt = true
+}
+
 const openStickerPicker = (slot) => {
     activeStickerSlot = slot
     ensureStickersLoaded().then(() => {
+        buildStickerFilters()
         document.getElementById('stickerPickerSlotLabel').innerText = `#${slot + 1}`
         document.getElementById('stickerSearch').value = ''
+        document.getElementById('stickerFilterType').value = ''
+        document.getElementById('stickerFilterEffect').value = ''
+        document.getElementById('stickerFilterRarity').value = ''
         renderStickerResults()
-        document.getElementById('stickerPickerPanel').style.display = 'block'
-        document.getElementById('stickerSearch').focus()
+
+        if (!stickerPickerModalInstance) {
+            stickerPickerModalInstance = new bootstrap.Modal(document.getElementById('stickerPickerModal'))
+        }
+        stickerPickerModalInstance.show()
+        // Stacked modal: lift this modal + its backdrop above the skin modal.
+        setTimeout(() => {
+            const backdrops = document.querySelectorAll('.modal-backdrop')
+            const last = backdrops[backdrops.length - 1]
+            if (last) last.style.zIndex = 1060
+            document.getElementById('stickerSearch').focus()
+        }, 0)
     })
 }
 
 const closeStickerPicker = () => {
-    const panel = document.getElementById('stickerPickerPanel')
-    if (panel) panel.style.display = 'none'
+    if (stickerPickerModalInstance) stickerPickerModalInstance.hide()
 }
 
 let stickerSearchTimer
@@ -282,19 +325,33 @@ const onStickerSearchInput = () => {
 const renderStickerResults = () => {
     if (!stickersData) return
     const q = document.getElementById('stickerSearch').value.trim().toLowerCase()
-    let list
-    if (!q) {
-        list = stickersData.slice(0, 60)
-    } else {
-        list = []
-        for (let i = 0; i < stickersData.length && list.length < 120; i++) {
-            if (stickersData[i].name.toLowerCase().includes(q)) list.push(stickersData[i])
-        }
+    const fType = document.getElementById('stickerFilterType').value
+    const fEffect = document.getElementById('stickerFilterEffect').value
+    const fRarity = document.getElementById('stickerFilterRarity').value
+
+    const matches = []
+    let total = 0
+    for (let i = 0; i < stickersData.length; i++) {
+        const s = stickersData[i]
+        if (q && !s.name.toLowerCase().includes(q)) continue
+        if (fType && s.type !== fType) continue
+        if (fEffect && s.effect !== fEffect) continue
+        if (fRarity && s.rarityName !== fRarity) continue
+        total++
+        if (matches.length < STICKER_RENDER_CAP) matches.push(s)
     }
-    const container = document.getElementById('stickerResults')
-    container.innerHTML = list.map(s => `
-        <div class="sticker-result" onclick="selectSticker(${s.id})" title="${s.name.replace(/"/g, '&quot;')}">
-            <img src="${s.image}" loading="lazy" alt="">
+
+    const countEl = document.getElementById('stickerResultCount')
+    if (countEl) {
+        const shown = total > STICKER_RENDER_CAP ? `${STICKER_RENDER_CAP}/${total}` : `${total}`
+        countEl.innerText = `${shown} ${langObject.stickersFound || ''}`.trim()
+    }
+
+    document.getElementById('stickerResults').innerHTML = matches.map(s => `
+        <div class="sticker-result" onclick="selectSticker(${s.id})" title="${s.name.replace(/"/g, '&quot;')}" style="border-color:${s.rarity || '#444'}">
+            <div class="sticker-result-img" style="--rarity:${s.rarity || '#444'}">
+                <img src="${s.image}" loading="lazy" alt="">
+            </div>
             <small>${s.name}</small>
         </div>
     `).join('')

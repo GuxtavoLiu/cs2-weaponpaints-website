@@ -792,32 +792,54 @@ li {
 .sticker-wear {
     width: 70px;
 }
-.sticker-results {
-    max-height: 240px;
-    overflow-y: auto;
-    gap: 6px;
+/* Big sticker picker modal */
+#stickerPickerModal {
+    z-index: 1065; /* sit above the skin modal (1055) when stacked */
+}
+.sticker-filter-bar .form-select,
+.sticker-filter-bar .form-control {
+    min-width: 130px;
+}
+.sticker-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    gap: 10px;
 }
 .sticker-result {
-    width: 70px;
     cursor: pointer;
     text-align: center;
-    padding: 4px;
-    border-radius: 6px;
-    transition: background-color .15s ease;
+    padding: 6px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background-color: rgba(255, 255, 255, 0.03);
+    transition: background-color .15s ease, transform .1s ease;
 }
 .sticker-result:hover {
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 255, 255, 0.10);
+    transform: translateY(-2px);
 }
-.sticker-result img {
-    width: 56px;
-    height: 56px;
+.sticker-result-img {
+    width: 100%;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    /* faint rarity-coloured glow behind the sticker */
+    background:
+        radial-gradient(circle at 50% 60%, color-mix(in srgb, var(--rarity, #444) 28%, transparent), transparent 70%);
+}
+.sticker-result-img img {
+    max-width: 92px;
+    max-height: 92px;
     object-fit: contain;
 }
 .sticker-result small {
     display: block;
-    font-size: .62rem;
-    line-height: 1.05;
-    color: #bbb;
+    margin-top: 4px;
+    font-size: .68rem;
+    line-height: 1.1;
+    color: #cfcfcf;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

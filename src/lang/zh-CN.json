@@ -43,5 +43,9 @@
     "stickerWear":"磨损",
     "searchStickers":"搜索印花...",
     "selectSticker":"选择印花",
-    "clear":"清除"
+    "clear":"清除",
+    "allTypes":"所有类型",
+    "allEffects":"所有效果",
+    "allRarities":"所有稀有度",
+    "stickersFound":"个印花"
 }

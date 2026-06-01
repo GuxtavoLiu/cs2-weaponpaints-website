@@ -40,5 +40,9 @@
     "stickerWear":"Износ",
     "searchStickers":"Поиск наклеек...",
     "selectSticker":"Выберите наклейку",
-    "clear":"Очистить"
+    "clear":"Очистить",
+    "allTypes":"Все типы",
+    "allEffects":"Все эффекты",
+    "allRarities":"Все редкости",
+    "stickersFound":"наклеек"
 }

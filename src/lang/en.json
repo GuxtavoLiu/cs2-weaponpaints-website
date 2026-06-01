@@ -43,5 +43,9 @@
     "stickerWear":"Wear",
     "searchStickers":"Search stickers...",
     "selectSticker":"Select a sticker",
-    "clear":"Clear"
+    "clear":"Clear",
+    "allTypes":"All types",
+    "allEffects":"All effects",
+    "allRarities":"All rarities",
+    "stickersFound":"sticker(s)"
 }

@@ -1,7 +1,9 @@
 // Generates src/public/js/json/stickers.json from a downloaded ByMykel/CSGO-API
-// stickers.json. Each output item is the minimal shape the website needs to
-// populate the sticker pickers: { id, name, image } where `id` is the in-game
-// sticker definition index stored in wp_player_skins.weapon_sticker_N.
+// stickers.json. Each output item carries what the sticker picker needs to
+// search, filter and render: { id, name, image, rarity, effect, type } where
+// `id` is the in-game sticker definition index stored in
+// wp_player_skins.weapon_sticker_N, `rarity` is the rarity colour hex,
+// `effect` is Holo/Foil/Glitter/Gold/... and `type` is Autograph/Team/Event/...
 //
 // Usage: node scripts/genStickers.js <path-to-raw-stickers.json>
 const fs = require("fs");
@@ -22,7 +24,15 @@ for (const s of raw) {
   seen.add(id);
   // Strip the leading "Sticker | " so the search/preview labels read cleanly.
   const name = (s.name || "").replace(/^Sticker \| /, "");
-  out.push({ id, name, image: s.image });
+  out.push({
+    id,
+    name,
+    image: s.image,
+    rarity: (s.rarity && s.rarity.color) || "",
+    rarityName: (s.rarity && s.rarity.name) || "",
+    effect: s.effect || "",
+    type: s.type || "",
+  });
 }
 
 out.sort((a, b) => a.name.localeCompare(b.name));
