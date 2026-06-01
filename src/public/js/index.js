@@ -521,6 +521,10 @@ socket.on('params-changed', (data) => {
 })
 
 // ---- Inspect link ----
+let inspectTimer
+const resetInspectButton = () => {
+    document.getElementById('inspectButton').innerHTML = langObject.inspectApply
+}
 const applyInspectLink = () => {
     const link = document.getElementById('inspectInput').value.trim()
     const status = document.getElementById('inspectStatus')
@@ -530,10 +534,19 @@ const applyInspectLink = () => {
     document.getElementById('inspectButton').innerHTML =
         `<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div>`
     socket.emit('apply-inspect', { steamid: user.id, link: link })
+    // Safety net: if the server never answers (e.g. it's running an old build
+    // without this handler), stop spinning and surface an error.
+    clearTimeout(inspectTimer)
+    inspectTimer = setTimeout(() => {
+        resetInspectButton()
+        status.className = 'm-0 mt-2 text-danger'
+        status.innerText = langObject.inspectInvalid || 'Error'
+    }, 10000)
 }
 window.applyInspectLink = applyInspectLink
 
 socket.on('inspect-applied', (data) => {
+    clearTimeout(inspectTimer)
     const status = document.getElementById('inspectStatus')
     document.getElementById('inspectButton').innerHTML = langObject.inspectApply
     if (data && data.ok) {
