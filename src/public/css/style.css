@@ -936,3 +936,9 @@ li {
 .loadout-gear:hover {
     transform: scale(1.1);
 }
+
+/* Any element wired to a click action shows a pointer cursor so users know it's
+   interactive (skin/agent/music cards equip on click, loadout cards, etc.). */
+[onclick] {
+    cursor: pointer;
+}
