@@ -160,7 +160,10 @@ const weaponIds = {
 //   "id;schema;x;y;wear;scale;rotation"  -> wear is index 4.
 // We only expose `wear`; everything else stays at the default position (0).
 const STICKER_EMPTY = '0;0;0;0;0;0;0'
-const STICKER_SLOTS = 5
+// CS2 weapon models only expose 4 sticker positions; the 5th DB column exists
+// but has no predefined spot, so we cap the UI at 4. The server still writes
+// weapon_sticker_4 (always empty) to keep the row schema consistent.
+const STICKER_SLOTS = 4
 
 let stickersData = null            // [{id, name, image, rarity, rarityName, effect, type}]
 let stickersById = null            // { id: sticker }

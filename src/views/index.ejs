@@ -33,11 +33,14 @@
                         <label class="form-check-label" for="stattrak"><%= lang.stattrak %></label>
                     </div>
 
-                    <!-- Stickers: 5 slots, default position, per-slot wear slider -->
+                    <!-- Stickers: 4 slots, default position, per-slot wear slider.
+                         CS2 weapon models only define 4 sticker positions; the 5th
+                         DB slot has no predefined spot and won't render when applied
+                         at the default position, so it's hidden from the UI. -->
                     <div class="w-100 mt-4">
                         <label class="form-label m-0 d-block text-center"><%= lang.stickers %></label>
                         <div class="d-flex justify-content-center flex-wrap mt-2" id="stickerSlots">
-                            <% for (let i = 0; i < 5; i++) { %>
+                            <% for (let i = 0; i < 4; i++) { %>
                             <div class="sticker-slot text-center mx-1 mb-2" data-slot="<%= i %>">
                                 <div class="sticker-thumb position-relative" onclick="openStickerPicker(<%= i %>)">
                                     <img id="stickerImg-<%= i %>" src="" alt="" class="sticker-img">
