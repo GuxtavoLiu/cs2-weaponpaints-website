@@ -38,5 +38,10 @@
     "fieldTestedCode":"久经",
     "wellWornCode":"破损",
     "battleScarredCode":"战痕",
-    "stattrak":"StatTrak™"
+    "stattrak":"StatTrak™",
+    "stickers":"印花",
+    "stickerWear":"磨损",
+    "searchStickers":"搜索印花...",
+    "selectSticker":"选择印花",
+    "clear":"清除"
 }

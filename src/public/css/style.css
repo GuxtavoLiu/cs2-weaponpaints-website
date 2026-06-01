@@ -755,3 +755,70 @@ li {
 .pt-6 {
     padding-top: 5rem;
 }
+/* ---- Stickers ---- */
+.sticker-slot {
+    width: 78px;
+}
+.sticker-thumb {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto;
+    border: 1px dashed #555;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background-color: rgba(255, 255, 255, 0.03);
+    transition: border-color .15s ease, background-color .15s ease;
+}
+.sticker-thumb:hover {
+    border-color: var(--bs-primary, #0d6efd);
+    background-color: rgba(255, 255, 255, 0.06);
+}
+.sticker-img {
+    max-width: 60px;
+    max-height: 60px;
+    display: none;
+}
+.sticker-plus {
+    color: #777;
+    font-size: 1.2rem;
+}
+.sticker-slot.filled .sticker-thumb {
+    border-style: solid;
+    border-color: #777;
+}
+.sticker-wear {
+    width: 70px;
+}
+.sticker-results {
+    max-height: 240px;
+    overflow-y: auto;
+    gap: 6px;
+}
+.sticker-result {
+    width: 70px;
+    cursor: pointer;
+    text-align: center;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background-color .15s ease;
+}
+.sticker-result:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+.sticker-result img {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+}
+.sticker-result small {
+    display: block;
+    font-size: .62rem;
+    line-height: 1.05;
+    color: #bbb;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

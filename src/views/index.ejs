@@ -2,7 +2,7 @@
     
     <!-- Modal -->
     <div class="modal fade" id="patternFloat" tabindex="-1" aria-labelledby="patternFloatLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-scrollable">
             <div class="modal-content" style="background-color: transparent !important;">
                 <div class="modal-header bg-nav text-light border-dark">
                     <h5 class="modal-title" id="patternFloatLabel"><%= lang.floatPattern %></h5>
@@ -31,6 +31,36 @@
                     <div class="form-check form-switch mx-auto mt-3" id="stattrakWrapper">
                         <input class="form-check-input" type="checkbox" role="switch" id="stattrak">
                         <label class="form-check-label" for="stattrak"><%= lang.stattrak %></label>
+                    </div>
+
+                    <!-- Stickers: 5 slots, default position, per-slot wear slider -->
+                    <div class="w-100 mt-4">
+                        <label class="form-label m-0 d-block text-center"><%= lang.stickers %></label>
+                        <div class="d-flex justify-content-center flex-wrap mt-2" id="stickerSlots">
+                            <% for (let i = 0; i < 5; i++) { %>
+                            <div class="sticker-slot text-center mx-1 mb-2" data-slot="<%= i %>">
+                                <div class="sticker-thumb position-relative" onclick="openStickerPicker(<%= i %>)">
+                                    <img id="stickerImg-<%= i %>" src="" alt="" class="sticker-img">
+                                    <span id="stickerPlus-<%= i %>" class="sticker-plus"><i class="fa-solid fa-plus"></i></span>
+                                </div>
+                                <button type="button" id="stickerClear-<%= i %>" class="btn btn-sm btn-link text-danger p-0 sticker-clear" style="display:none;" onclick="clearSticker(<%= i %>)"><i class="fa-solid fa-xmark"></i> <%= lang.clear %></button>
+                                <div class="sticker-wear-wrap" style="display:none;">
+                                    <input type="range" id="stickerWear-<%= i %>" class="slider sticker-wear" min="0" max="1" step="0.01" value="0" oninput="onStickerWearInput(<%= i %>)">
+                                    <small><%= lang.stickerWear %>: <span id="stickerWearVal-<%= i %>">0.00</span></small>
+                                </div>
+                            </div>
+                            <% } %>
+                        </div>
+
+                        <!-- Inline searchable sticker picker (kept inside this modal to avoid stacked modals) -->
+                        <div id="stickerPickerPanel" class="bg-nav rounded p-2 mt-2" style="display:none;">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong class="ms-1"><%= lang.selectSticker %> <span id="stickerPickerSlotLabel" class="text-secondary"></span></strong>
+                                <button type="button" class="btn-close btn-close-white" onclick="closeStickerPicker()" aria-label="Close"></button>
+                            </div>
+                            <input type="text" id="stickerSearch" class="form-control mb-2" placeholder="<%= lang.searchStickers %>" oninput="onStickerSearchInput()" data-bs-theme="dark" autocomplete="off">
+                            <div id="stickerResults" class="d-flex flex-wrap justify-content-center sticker-results"></div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer bg-nav text-light border-dark d-flex justify-content-center">

@@ -334,23 +334,48 @@ io.on("connection", (socket) => {
     );
   });
 
+  // Rebuild a canonical sticker slot string from untrusted client input. The
+  // plugin format is "id;schema;x;y;wear;scale;rotation"; we only let the user
+  // pick the sticker id + wear and force the default position (everything 0).
+  const sanitizeSticker = (s) => {
+    if (typeof s !== "string") return "0;0;0;0;0;0;0";
+    const parts = s.split(";");
+    const id = parseInt(parts[0], 10);
+    if (!Number.isFinite(id) || id <= 0) return "0;0;0;0;0;0;0";
+    let wear = parseFloat(parts[4]);
+    if (!Number.isFinite(wear)) wear = 0;
+    wear = Math.min(1, Math.max(0, wear));
+    return `${id};0;0;0;${wear};0;0`;
+  };
+
   socket.on("change-params", (data) => {
     dbg("change-params recv", data);
     const wear = parseFloat(data.float);
     const seed = parseInt(data.pattern, 10) || 0;
     const safeWear = Number.isFinite(wear) ? wear : 0;
     const stattrak = data.stattrak ? 1 : 0;
+    const stickersIn = Array.isArray(data.stickers) ? data.stickers : [];
+    const stk = [0, 1, 2, 3, 4].map((i) => sanitizeSticker(stickersIn[i]));
     // The modal carries weapon_defindex + paint_id, so a single click can fully
-    // create the skin row (paint + wear + seed + stattrak) for both teams, not
-    // just update a pre-existing one. weapon_team is in the PK, so it must be
-    // supplied.
+    // create the skin row (paint + wear + seed + stattrak + stickers) for both
+    // teams, not just update a pre-existing one. weapon_team is in the PK, so it
+    // must be supplied.
+    const rowValues = (team) => [data.steamid, team, data.weaponid, data.paintid, safeWear, seed, stattrak, ...stk];
     connection.query(
-      "INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id, weapon_wear, weapon_seed, weapon_stattrak) VALUES (?, 2, ?, ?, ?, ?, ?), (?, 3, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id), weapon_wear = VALUES(weapon_wear), weapon_seed = VALUES(weapon_seed), weapon_stattrak = VALUES(weapon_stattrak)",
-      [data.steamid, data.weaponid, data.paintid, safeWear, seed, stattrak, data.steamid, data.weaponid, data.paintid, safeWear, seed, stattrak],
+      "INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id, weapon_wear, weapon_seed, weapon_stattrak, weapon_sticker_0, weapon_sticker_1, weapon_sticker_2, weapon_sticker_3, weapon_sticker_4) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id), weapon_wear = VALUES(weapon_wear), weapon_seed = VALUES(weapon_seed), weapon_stattrak = VALUES(weapon_stattrak), weapon_sticker_0 = VALUES(weapon_sticker_0), weapon_sticker_1 = VALUES(weapon_sticker_1), weapon_sticker_2 = VALUES(weapon_sticker_2), weapon_sticker_3 = VALUES(weapon_sticker_3), weapon_sticker_4 = VALUES(weapon_sticker_4)",
+      [...rowValues(2), ...rowValues(3)],
       (err, results, fields) => {
         if (err) dbg("change-params SQL ERROR", err.message);
         else dbg("change-params SQL ok affectedRows=", results.affectedRows);
-        socket.emit("params-changed");
+        // Return the fresh rows so the client can refresh its in-memory skins and
+        // re-open the modal with the saved stickers without a page reload.
+        connection.query(
+          "SELECT * FROM wp_player_skins WHERE steamid = ?",
+          [data.steamid],
+          (err2, results2, fields2) => {
+            socket.emit("params-changed", { newSkins: results2 || [] });
+          }
+        );
       }
     );
   });

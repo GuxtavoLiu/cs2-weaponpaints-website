@@ -35,5 +35,10 @@
     "fieldTestedCode":"FT",
     "wellWornCode":"WW",
     "battleScarredCode":"BS",
-    "stattrak":"StatTrak™"
+    "stattrak":"StatTrak™",
+    "stickers":"Adesivos",
+    "stickerWear":"Desgaste",
+    "searchStickers":"Buscar adesivos...",
+    "selectSticker":"Selecione um adesivo",
+    "clear":"Limpar"
 }

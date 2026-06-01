@@ -155,6 +155,168 @@ const weaponIds = {
     "studded_hydra_gloves": 5035,
 }
 
+// ---- Stickers ----
+// DB string format (from the cs2-WeaponPaints plugin):
+//   "id;schema;x;y;wear;scale;rotation"  -> wear is index 4.
+// We only expose `wear`; everything else stays at the default position (0).
+const STICKER_EMPTY = '0;0;0;0;0;0;0'
+const STICKER_SLOTS = 5
+
+let stickersData = null            // [{id, name, image}]
+let stickersById = null            // { id: {id, name, image} }
+let stickerSlots = new Array(STICKER_SLOTS).fill(0) // selected sticker id per slot (0 = empty)
+let activeStickerSlot = 0
+let stickersLoadPromise = null
+
+const ensureStickersLoaded = () => {
+    if (stickersData) return Promise.resolve(stickersData)
+    if (!stickersLoadPromise) {
+        // Not cached in localStorage on purpose: the file is ~3MB and would risk
+        // the quota that already bit the skins blob. In-memory cache is enough.
+        stickersLoadPromise = fetch('/js/json/stickers.json')
+            .then(r => r.json())
+            .then(data => {
+                stickersData = data
+                stickersById = {}
+                data.forEach(s => { stickersById[s.id] = s })
+                return data
+            })
+    }
+    return stickersLoadPromise
+}
+
+// Build the per-slot DB string for the current modal state.
+const buildStickerString = (slot) => {
+    const id = stickerSlots[slot]
+    if (!id || id <= 0) return STICKER_EMPTY
+    let wear = parseFloat(document.getElementById(`stickerWear-${slot}`).value)
+    if (!Number.isFinite(wear)) wear = 0
+    wear = Math.min(1, Math.max(0, wear))
+    return `${id};0;0;0;${wear};0;0`
+}
+
+const renderStickerSlot = (slot, id, wear) => {
+    id = parseInt(id, 10) || 0
+    stickerSlots[slot] = id > 0 ? id : 0
+
+    const slotEl = document.querySelector(`.sticker-slot[data-slot="${slot}"]`)
+    const img = document.getElementById(`stickerImg-${slot}`)
+    const plus = document.getElementById(`stickerPlus-${slot}`)
+    const clearBtn = document.getElementById(`stickerClear-${slot}`)
+    const wearWrap = slotEl.querySelector('.sticker-wear-wrap')
+    const wearInput = document.getElementById(`stickerWear-${slot}`)
+    const wearVal = document.getElementById(`stickerWearVal-${slot}`)
+
+    const sticker = id > 0 && stickersById ? stickersById[id] : null
+
+    if (id > 0) {
+        slotEl.classList.add('filled')
+        if (sticker) {
+            img.src = sticker.image
+            img.alt = sticker.name
+            img.title = sticker.name
+        }
+        img.style.display = sticker ? 'block' : 'none'
+        plus.style.display = sticker ? 'none' : 'block'
+        clearBtn.style.display = 'inline-block'
+        wearWrap.style.display = 'block'
+        const w = Number.isFinite(wear) ? wear : 0
+        wearInput.value = w
+        wearVal.innerText = Number(w).toFixed(2)
+    } else {
+        slotEl.classList.remove('filled')
+        img.src = ''
+        img.style.display = 'none'
+        plus.style.display = 'block'
+        clearBtn.style.display = 'none'
+        wearWrap.style.display = 'none'
+        wearInput.value = 0
+        wearVal.innerText = '0.00'
+    }
+}
+
+// Populate the 5 slots from a saved wp_player_skins row (or reset when none).
+const loadStickersIntoModal = (row) => {
+    return ensureStickersLoaded().then(() => {
+        for (let i = 0; i < STICKER_SLOTS; i++) {
+            const raw = row ? row[`weapon_sticker_${i}`] : null
+            let id = 0, wear = 0
+            if (raw) {
+                const parts = String(raw).split(';')
+                id = parseInt(parts[0], 10) || 0
+                wear = parseFloat(parts[4]) || 0
+            }
+            renderStickerSlot(i, id, wear)
+        }
+        closeStickerPicker()
+    })
+}
+
+const onStickerWearInput = (slot) => {
+    const v = parseFloat(document.getElementById(`stickerWear-${slot}`).value) || 0
+    document.getElementById(`stickerWearVal-${slot}`).innerText = v.toFixed(2)
+}
+
+const openStickerPicker = (slot) => {
+    activeStickerSlot = slot
+    ensureStickersLoaded().then(() => {
+        document.getElementById('stickerPickerSlotLabel').innerText = `#${slot + 1}`
+        document.getElementById('stickerSearch').value = ''
+        renderStickerResults()
+        document.getElementById('stickerPickerPanel').style.display = 'block'
+        document.getElementById('stickerSearch').focus()
+    })
+}
+
+const closeStickerPicker = () => {
+    const panel = document.getElementById('stickerPickerPanel')
+    if (panel) panel.style.display = 'none'
+}
+
+let stickerSearchTimer
+const onStickerSearchInput = () => {
+    clearTimeout(stickerSearchTimer)
+    stickerSearchTimer = setTimeout(renderStickerResults, 150)
+}
+
+const renderStickerResults = () => {
+    if (!stickersData) return
+    const q = document.getElementById('stickerSearch').value.trim().toLowerCase()
+    let list
+    if (!q) {
+        list = stickersData.slice(0, 60)
+    } else {
+        list = []
+        for (let i = 0; i < stickersData.length && list.length < 120; i++) {
+            if (stickersData[i].name.toLowerCase().includes(q)) list.push(stickersData[i])
+        }
+    }
+    const container = document.getElementById('stickerResults')
+    container.innerHTML = list.map(s => `
+        <div class="sticker-result" onclick="selectSticker(${s.id})" title="${s.name.replace(/"/g, '&quot;')}">
+            <img src="${s.image}" loading="lazy" alt="">
+            <small>${s.name}</small>
+        </div>
+    `).join('')
+}
+
+const selectSticker = (id) => {
+    const wear = parseFloat(document.getElementById(`stickerWear-${activeStickerSlot}`).value) || 0
+    renderStickerSlot(activeStickerSlot, id, wear)
+    closeStickerPicker()
+}
+
+const clearSticker = (slot) => {
+    renderStickerSlot(slot, 0, 0)
+}
+
+window.openStickerPicker = openStickerPicker
+window.closeStickerPicker = closeStickerPicker
+window.onStickerSearchInput = onStickerSearchInput
+window.onStickerWearInput = onStickerWearInput
+window.selectSticker = selectSticker
+window.clearSticker = clearSticker
+
 const editModal = (img, weaponName, paintName, weaponId, paintId, stattrakAvailable) => {
     document.getElementById('modalImg').src = img
     document.getElementById('modalWeapon').innerText = weaponName
@@ -162,22 +324,28 @@ const editModal = (img, weaponName, paintName, weaponId, paintId, stattrakAvaila
     currentWeaponId = weaponIds[weaponId]
     currentPaintId = paintId
 
+    // The saved row (if any) for this exact weapon+paint drives both the StatTrak
+    // state and the saved stickers.
+    let savedRow = undefined
+    if (typeof selectedSkins !== 'undefined') {
+        savedRow = selectedSkins.find(s => s.weapon_defindex == currentWeaponId && s.weapon_paint_id == currentPaintId)
+    }
+
     // StatTrak only applies to items that support it (e.g. not gloves / low-tier
-    // skins). Hide the switch otherwise, and reflect any already-saved value.
+    // skins). Hide the switch otherwise. When supported, default it ON for a
+    // fresh item; respect the saved value so the user can leave it disabled.
     const stWrapper = document.getElementById('stattrakWrapper')
     const stInput = document.getElementById('stattrak')
     if (stattrakAvailable) {
         stWrapper.style.display = ''
-        let saved = false
-        if (typeof selectedSkins !== 'undefined') {
-            const row = selectedSkins.find(s => s.weapon_defindex == currentWeaponId && s.weapon_paint_id == currentPaintId)
-            if (row) saved = !!Number(row.weapon_stattrak)
-        }
-        stInput.checked = saved
+        stInput.checked = savedRow ? !!Number(savedRow.weapon_stattrak) : true
     } else {
         stWrapper.style.display = 'none'
         stInput.checked = false
     }
+
+    // Load the saved stickers (or reset all slots) for this weapon.
+    loadStickersIntoModal(savedRow)
 
     console.log(img, weaponName, paintName, currentWeaponId, currentPaintId)
 }
@@ -190,6 +358,12 @@ const changeParams = () => {
     let pattern = document.getElementById("pattern").value
     let stattrak = document.getElementById("stattrak").checked ? 1 : 0
 
+    // Collect the 5 sticker slots as DB strings ("id;schema;x;y;wear;scale;rotation").
+    let stickers = []
+    for (let i = 0; i < STICKER_SLOTS; i++) {
+        stickers.push(buildStickerString(i))
+    }
+
     document.getElementById('modalButton').innerHTML =
         `
             <div class="spinner-border spinner-border-sm" role="status">
@@ -197,7 +371,7 @@ const changeParams = () => {
             </div>
         `
 
-    socket.emit('change-params', {steamid: steamid, weaponid: weaponid, paintid: paintid, float: float, pattern: pattern, stattrak: stattrak})
+    socket.emit('change-params', {steamid: steamid, weaponid: weaponid, paintid: paintid, float: float, pattern: pattern, stattrak: stattrak, stickers: stickers})
 }
 
 const putOnWorkshop = (setId, selected_knife_id, selected_knife, selected_gloves) => {
@@ -234,7 +408,12 @@ const workshopSearch = () => {
     }
 }
 
-socket.on('params-changed', () => {
+socket.on('params-changed', (data) => {
+    // Keep the in-memory skins in sync so re-opening the modal shows the saved
+    // stickers / stattrak without a page reload.
+    if (data && Array.isArray(data.newSkins) && typeof selectedSkins !== 'undefined') {
+        selectedSkins = data.newSkins
+    }
     document.getElementById('modalButton').innerHTML = langObject.change
 })
 

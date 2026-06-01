@@ -35,5 +35,10 @@
     "fieldTestedCode":"FT",
     "wellWornCode":"WW",
     "battleScarredCode":"BS",
-    "stattrak":"StatTrak™"
+    "stattrak":"StatTrak™",
+    "stickers":"Наклейки",
+    "stickerWear":"Износ",
+    "searchStickers":"Поиск наклеек...",
+    "selectSticker":"Выберите наклейку",
+    "clear":"Очистить"
 }
