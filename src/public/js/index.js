@@ -436,6 +436,17 @@ const editModal = (img, weaponName, paintName, weaponId, paintId, stattrakAvaila
         stInput.checked = false
     }
 
+    // Pre-fill the float (wear) and pattern (seed) with the saved values so the
+    // modal reflects the current item. Without this the fields keep the default
+    // 0.000001 / 0, and saving (e.g. after only touching stickers) would silently
+    // reset the wear/seed back to Factory New.
+    const savedWear = savedRow && Number.isFinite(parseFloat(savedRow.weapon_wear)) ? parseFloat(savedRow.weapon_wear) : 0.000001
+    const savedSeed = savedRow && Number.isFinite(parseInt(savedRow.weapon_seed, 10)) ? parseInt(savedRow.weapon_seed, 10) : 0
+    document.getElementById('float').value = savedWear
+    document.getElementById('floatSlider').value = savedWear
+    document.getElementById('pattern').value = savedSeed
+    if (typeof updateFloatText === 'function') updateFloatText(savedWear)
+
     // Load the saved stickers (or reset all slots) for this weapon.
     loadStickersIntoModal(savedRow)
 
