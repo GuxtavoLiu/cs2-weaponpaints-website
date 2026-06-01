@@ -123,7 +123,12 @@
     });
 
     const isNeedToLoad = (scroll) => {
-        const top = document.getElementById('scrollPosElement').getBoundingClientRect().top
+        // scrollPosElement only exists while the (currently disabled) workshop
+        // grid is rendered. Guard against null so the scroll handler doesn't
+        // throw on every scroll event when the workshop isn't on the page.
+        const el = document.getElementById('scrollPosElement')
+        if (!el) return false
+        const top = el.getBoundingClientRect().top
         if (top < window.screen.height) {
             return true
         } else {

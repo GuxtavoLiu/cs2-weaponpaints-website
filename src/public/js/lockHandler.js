@@ -1,11 +1,12 @@
-let blackListWeaponsTEMP = await import(`/js/json/locked/weapons.json`, {assert: {type: 'json'}})
-let blackListWeapons = blackListWeaponsTEMP.default
+// Load the lock lists via fetch instead of JSON module imports. The old
+// `import(..., {assert: {type:'json'}})` syntax was removed from Chromium 123+
+// (replaced by `with`), which broke this module entirely. fetch().json()
+// works in every browser and yields the same parsed array/object.
+let blackListWeapons = await fetch(`/js/json/locked/weapons.json`).then(r => r.json())
 
-let blackListSkinsTEMP = await import(`/js/json/locked/skins.json`, {assert: {type: 'json'}})
-let blackListSkins = blackListSkinsTEMP.default
+let blackListSkins = await fetch(`/js/json/locked/skins.json`).then(r => r.json())
 
-let blackButtonsTEMP = await import(`/js/json/locked/buttons.json`, {assert: {type: 'json'}})
-let blackButtons = blackButtonsTEMP.default
+let blackButtons = await fetch(`/js/json/locked/buttons.json`).then(r => r.json())
 
 
 function lockedMain() {
