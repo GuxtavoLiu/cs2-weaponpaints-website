@@ -942,3 +942,41 @@ li {
 [onclick] {
     cursor: pointer;
 }
+
+/* ============================================================
+   Mobile responsiveness — ADDITIVE ONLY.
+   Every rule below is scoped to small viewports, so layouts at
+   >= 576px (tablet/desktop) are completely unaffected. The grid,
+   sidebar/scroller toggle and modals are already responsive via
+   Bootstrap utility classes; these rules only patch the gaps that
+   show up on phones.
+   ============================================================ */
+@media (max-width: 575.98px) {
+    /* The footer is position:fixed and its credit line wraps to 2-3
+       lines on a narrow screen, growing tall enough to cover the last
+       row of cards. Give the scrolling content room to clear it. */
+    #skinsContainer {
+        padding-bottom: 6rem;
+    }
+
+    /* Sticker picker: fit more stickers per row on a phone so the user
+       isn't scrolling through 2-wide columns. (Desktop keeps 112px.) */
+    .sticker-results-grid {
+        grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+        gap: 8px;
+    }
+    .sticker-result-img {
+        height: 76px;
+    }
+    .sticker-result-img img {
+        max-width: 72px;
+        max-height: 72px;
+    }
+
+    /* Keep the picker filter selects from forcing horizontal overflow
+       inside the narrow picker dialog. */
+    .sticker-filter-bar .form-select,
+    .sticker-filter-bar .form-control {
+        min-width: 0;
+    }
+}
