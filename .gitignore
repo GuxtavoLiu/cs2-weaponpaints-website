@@ -4,3 +4,9 @@ sessions/
 src/config.json
 src/views/index -- copy.ejs
 src/public/images
+
+# IDE
+.idea/
+
+# Local/backup config files (may contain credentials)
+src/bkp.localhost.config.json
