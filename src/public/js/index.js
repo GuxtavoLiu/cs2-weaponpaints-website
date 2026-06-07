@@ -168,6 +168,12 @@ const STICKER_SLOTS = 4
 let stickersData = null            // [{id, name, image, rarity, rarityName, effect, type}]
 let stickersById = null            // { id: sticker }
 let stickerSlots = new Array(STICKER_SLOTS).fill(0) // selected sticker id per slot (0 = empty)
+// Per-slot placement: offset x/y on the weapon, scale and rotation. The "untouched"
+// default is all-zero, which serialises to the exact same string the site used
+// before positioning existed (id;0;0;0;wear;0;0), so saved items don't change
+// unless the user actually moves a sticker in the 3D editor.
+const defaultStickerTransform = () => ({ x: 0, y: 0, scale: 0, rotation: 0 })
+let stickerTransforms = Array.from({ length: STICKER_SLOTS }, defaultStickerTransform)
 let activeStickerSlot = 0
 let stickersLoadPromise = null
 let stickerFiltersBuilt = false
@@ -190,18 +196,46 @@ const ensureStickersLoaded = () => {
 }
 
 // Build the per-slot DB string for the current modal state.
+// Format: "id;schema;x;y;wear;scale;rotation".
 const buildStickerString = (slot) => {
     const id = stickerSlots[slot]
     if (!id || id <= 0) return STICKER_EMPTY
     let wear = parseFloat(document.getElementById(`stickerWear-${slot}`).value)
     if (!Number.isFinite(wear)) wear = 0
     wear = Math.min(1, Math.max(0, wear))
-    return `${id};0;0;0;${wear};0;0`
+    const t = stickerTransforms[slot] || defaultStickerTransform()
+    const n = (v) => (Number.isFinite(v) ? +(+v).toFixed(6) : 0)
+    return `${id};0;${n(t.x)};${n(t.y)};${wear};${n(t.scale)};${n(t.rotation)}`
 }
 
-const renderStickerSlot = (slot, id, wear) => {
+// Read/replace a slot's placement (used by the 3D editor).
+const getStickerTransform = (slot) => ({ ...(stickerTransforms[slot] || defaultStickerTransform()) })
+const setStickerTransform = (slot, t) => {
+    stickerTransforms[slot] = {
+        x: Number.isFinite(t && t.x) ? t.x : 0,
+        y: Number.isFinite(t && t.y) ? t.y : 0,
+        scale: Number.isFinite(t && t.scale) ? t.scale : 0,
+        rotation: Number.isFinite(t && t.rotation) ? t.rotation : 0,
+    }
+    const slotEl = document.querySelector(`.sticker-slot[data-slot="${slot}"]`)
+    if (slotEl) {
+        const moved = stickerTransforms[slot].x !== 0 || stickerTransforms[slot].y !== 0 ||
+            stickerTransforms[slot].scale !== 0 || stickerTransforms[slot].rotation !== 0
+        slotEl.classList.toggle('positioned', moved)
+    }
+}
+
+const renderStickerSlot = (slot, id, wear, transform) => {
     id = parseInt(id, 10) || 0
     stickerSlots[slot] = id > 0 ? id : 0
+
+    // A fresh selection resets placement; loading a saved sticker passes its
+    // stored transform; clearing resets to default.
+    if (id > 0) {
+        setStickerTransform(slot, transform || defaultStickerTransform())
+    } else {
+        setStickerTransform(slot, defaultStickerTransform())
+    }
 
     const slotEl = document.querySelector(`.sticker-slot[data-slot="${slot}"]`)
     const img = document.getElementById(`stickerImg-${slot}`)
@@ -248,9 +282,10 @@ const applyStickerToAll = (event, slot) => {
     const id = stickerSlots[slot]
     if (!id || id <= 0) return
     const wear = parseFloat(document.getElementById(`stickerWear-${slot}`).value) || 0
+    const transform = getStickerTransform(slot)
     for (let i = 0; i < STICKER_SLOTS; i++) {
         if (i === slot) continue
-        renderStickerSlot(i, id, wear)
+        renderStickerSlot(i, id, wear, { ...transform })
     }
 }
 
@@ -259,13 +294,19 @@ const loadStickersIntoModal = (row) => {
     return ensureStickersLoaded().then(() => {
         for (let i = 0; i < STICKER_SLOTS; i++) {
             const raw = row ? row[`weapon_sticker_${i}`] : null
-            let id = 0, wear = 0
+            let id = 0, wear = 0, transform = defaultStickerTransform()
             if (raw) {
                 const parts = String(raw).split(';')
                 id = parseInt(parts[0], 10) || 0
                 wear = parseFloat(parts[4]) || 0
+                transform = {
+                    x: parseFloat(parts[2]) || 0,
+                    y: parseFloat(parts[3]) || 0,
+                    scale: parseFloat(parts[5]) || 0,
+                    rotation: parseFloat(parts[6]) || 0,
+                }
             }
-            renderStickerSlot(i, id, wear)
+            renderStickerSlot(i, id, wear, transform)
         }
         closeStickerPicker()
     })
@@ -408,6 +449,18 @@ window.renderStickerResults = renderStickerResults
 window.selectSticker = selectSticker
 window.clearSticker = clearSticker
 window.applyStickerToAll = applyStickerToAll
+
+// API consumed by the 3D placement editor (sticker3d.js, an ES module).
+window.stickerEditorAPI = {
+    slotCount: STICKER_SLOTS,
+    getSlotStickerId: (slot) => stickerSlots[slot] || 0,
+    getStickerImage: (id) => (stickersById && stickersById[id] ? stickersById[id].image : null),
+    getStickerName: (id) => (stickersById && stickersById[id] ? stickersById[id].name : ''),
+    getTransform: (slot) => getStickerTransform(slot),
+    setTransform: (slot, t) => setStickerTransform(slot, t),
+    // The weapon currently open in the edit modal (defindex + display name).
+    getCurrentWeapon: () => ({ defindex: currentWeaponId, name: (document.getElementById('modalWeapon') || {}).innerText || '' }),
+}
 
 const editModal = (img, weaponName, paintName, weaponId, paintId, stattrakAvailable) => {
     document.getElementById('modalImg').src = img
