@@ -13,3 +13,6 @@ src/bkp.localhost.config.json
 
 # Local run logs
 *.run.log
+# Weapon 3D models (Valve IP - fetched at setup, not committed)
+src/public/models/
+.models-src/
