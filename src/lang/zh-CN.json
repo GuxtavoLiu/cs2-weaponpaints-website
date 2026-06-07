@@ -77,5 +77,6 @@
     "positionSavedAt":"保存于",
     "positionRetap":"点击重新放置",
     "positionClickSelect":"点击印花进行选择。右键拖动移动，滚轮旋转。",
-    "positionSelected":"已选择"
+    "positionSelected":"已选择",
+    "clearAll":"清除所有印花"
 }

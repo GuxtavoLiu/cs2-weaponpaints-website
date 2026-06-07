@@ -74,5 +74,6 @@
     "positionSavedAt":"Сохранено в",
     "positionRetap":"нажмите, чтобы разместить заново",
     "positionClickSelect":"Нажмите на стикер, чтобы выбрать. Правая кнопка двигает, колесо вращает.",
-    "positionSelected":"Выбран"
+    "positionSelected":"Выбран",
+    "clearAll":"Очистить все стикеры"
 }

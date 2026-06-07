@@ -47,6 +47,7 @@ const gameRotToScreen = (deg) => ((360 - (Math.round(Number(deg) || 0) % 360)) %
 let renderer, scene, camera, controls
 let weaponObject = null
 let baseSize = 1, decalDepth = 1
+let canvasBounds = null // { min, max, sideAxis, uAxis, vAxis } for offset<->surface mapping
 let loadedDefindex = null
 let openSlot = 0
 
@@ -161,6 +162,48 @@ function frameObject(obj) {
     camera.updateProjectionMatrix()
     controls.target.set(0, 0, 0)
     controls.update()
+
+    // Build a 2D "canvas" from the model's side projection. Sticker offset is then
+    // a deterministic position on that canvas, so reloading reprojects to the SAME
+    // surface point. (Mesh UVs aren't unique across the model, which made saved
+    // stickers jump to a different spot on reload.)
+    obj.updateMatrixWorld(true)
+    const wbox = new THREE.Box3().setFromObject(obj)
+    const ext = wbox.getSize(new THREE.Vector3())
+    const ax = [['x', ext.x], ['y', ext.y], ['z', ext.z]].sort((a, b) => a[1] - b[1])
+    const sideAxis = ax[0][0]                 // thinnest axis = the face we look at
+    const a1 = ax[1][0], a2 = ax[2][0]
+    const uAxis = ext[a2] >= ext[a1] ? a2 : a1 // longest in-plane axis = horizontal (u)
+    const vAxis = uAxis === a1 ? a2 : a1
+    canvasBounds = { min: wbox.min.clone(), max: wbox.max.clone(), sideAxis, uAxis, vAxis }
+}
+
+// Project a 3D surface point to canvas coords (0..1).
+function canvasFromPoint(p) {
+    const b = canvasBounds; if (!b) return { u: 0.5, v: 0.5 }
+    const span = (k) => (b.max[k] - b.min[k]) || 1
+    return {
+        u: Math.min(1, Math.max(0, (p[b.uAxis] - b.min[b.uAxis]) / span(b.uAxis))),
+        v: Math.min(1, Math.max(0, (p[b.vAxis] - b.min[b.vAxis]) / span(b.vAxis))),
+    }
+}
+// Reproject canvas coords to a surface point by raycasting into the model from the
+// visible side. Deterministic, so the round-trip place->save->reload is stable.
+function pointFromCanvas(u, v) {
+    const b = canvasBounds; if (!b || !weaponObject) return null
+    const origin = new THREE.Vector3()
+    origin[b.uAxis] = b.min[b.uAxis] + u * (b.max[b.uAxis] - b.min[b.uAxis])
+    origin[b.vAxis] = b.min[b.vAxis] + v * (b.max[b.vAxis] - b.min[b.vAxis])
+    origin[b.sideAxis] = b.max[b.sideAxis] + (b.max[b.sideAxis] - b.min[b.sideAxis]) + 1
+    const dir = new THREE.Vector3(); dir[b.sideAxis] = -1
+    const hits = new THREE.Raycaster(origin, dir).intersectObject(weaponObject, true)
+    if (!hits.length) return null
+    const h = hits[0]
+    return {
+        point: h.point.clone(),
+        object: h.object,
+        normal: (h.face ? h.face.normal.clone().transformDirection(h.object.matrixWorld) : new THREE.Vector3(1, 0, 0)).normalize(),
+    }
 }
 
 function loadWeapon(defindex) {
@@ -182,32 +225,6 @@ function loadWeapon(defindex) {
             }
         )
     })
-}
-
-// Find an approximate 3D surface point (+ normal) whose weapon-UV is closest to
-// (tu,tv). Lets us show stickers from their stored offset. O(faces) once per load.
-function findSurfacePointForUV(tu, tv) {
-    if (!weaponObject) return null
-    let best = Infinity, bMesh = null, bi = -1
-    weaponObject.traverse((m) => {
-        if (!m.isMesh) return
-        const uv = m.geometry.attributes.uv, pos = m.geometry.attributes.position
-        if (!uv || !pos) return
-        for (let i = 0; i < pos.count; i += 3) {
-            const u0 = (uv.getX(i) + uv.getX(i + 1) + uv.getX(i + 2)) / 3
-            const v0 = (uv.getY(i) + uv.getY(i + 1) + uv.getY(i + 2)) / 3
-            const d = (u0 - tu) * (u0 - tu) + (v0 - tv) * (v0 - tv)
-            if (d < best) { best = d; bMesh = m; bi = i }
-        }
-    })
-    if (!bMesh) return null
-    const pos = bMesh.geometry.attributes.position
-    const a = new THREE.Vector3().fromBufferAttribute(pos, bi)
-    const b = new THREE.Vector3().fromBufferAttribute(pos, bi + 1)
-    const c = new THREE.Vector3().fromBufferAttribute(pos, bi + 2)
-    const point = a.clone().add(b).add(c).multiplyScalar(1 / 3).applyMatrix4(bMesh.matrixWorld)
-    const normal = new THREE.Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a)).transformDirection(bMesh.matrixWorld).normalize()
-    return { point, normal, object: bMesh }
 }
 
 // ---------------------------------------------------------------------------
@@ -309,7 +326,7 @@ function moveSelectedTo(hit) {
     const it = sel()
     if (!it || !hit) return
     it.pos = hit.point; it.object = hit.object; it.normal = hit.normal
-    if (hit.uv) it.uv = hit.uv
+    it.uv = canvasFromPoint(hit.point) // canvas coords -> deterministic round-trip
     it.dirty = true
     buildItemDecal(it); rebuildOutline(); updateStatus()
 }
@@ -382,11 +399,11 @@ async function openStickerEditor(s) {
         if (tr.x !== 0 || tr.y !== 0) {
             uv = gameToUv(tr.x, tr.y, weapon.defindex)
         } else {
-            // Unplaced: spread defaults along the weapon so they're visible.
-            uv = { u: 0.30 + placedDefault * 0.10, v: 0.55 }
+            // Unplaced: drop defaults on the easy-to-reach receiver side, spread a bit.
+            uv = { u: 0.46 + placedDefault * 0.06, v: 0.62 }
             placedDefault++
         }
-        const sp = findSurfacePointForUV(uv.u, uv.v)
+        const sp = pointFromCanvas(uv.u, uv.v)
         const it = {
             slot: i, id, tex: null, mesh: null,
             pos: sp ? sp.point : null, normal: sp ? sp.normal : new THREE.Vector3(0, 0, 1),
@@ -419,8 +436,9 @@ function resetStickerEditor() {
     if (!it) return
     it.dirty = true
     it.rot = 0
-    const sp = findSurfacePointForUV(0.5, 0.5)
-    if (sp) { it.pos = sp.point; it.normal = sp.normal; it.object = sp.object; it.uv = { u: 0.5, v: 0.5 } }
+    const uv = { u: 0.5, v: 0.62 }
+    const sp = pointFromCanvas(uv.u, uv.v)
+    if (sp) { it.pos = sp.point; it.normal = sp.normal; it.object = sp.object; it.uv = uv }
     buildItemDecal(it)
     setSelected(selIndex)
 }
@@ -437,6 +455,15 @@ function saveStickerEditor() {
             // ever change position and rotation.
             api.setTransform(it.slot, { x: g.x, y: g.y, scale: it.savedScale || 0, rotation: screenRotToGame(it.rot) })
         })
+    }
+    closeStickerEditor()
+}
+
+function clearAllStickers() {
+    const api = API()
+    if (api && api.clearSlot) {
+        const count = api.slotCount || 5
+        for (let i = 0; i < count; i++) api.clearSlot(i)
     }
     closeStickerEditor()
 }
@@ -459,3 +486,4 @@ window.openStickerEditor = openStickerEditor
 window.closeStickerEditor = closeStickerEditor
 window.resetStickerEditor = resetStickerEditor
 window.saveStickerEditor = saveStickerEditor
+window.clearAllStickers = clearAllStickers

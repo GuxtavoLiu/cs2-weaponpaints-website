@@ -81,5 +81,6 @@
     "positionSavedAt":"Salvo em",
     "positionRetap":"toque para reposicionar",
     "positionClickSelect":"Clique num sticker para selecionar. Botão direito move, scroll rotaciona.",
-    "positionSelected":"Selecionado"
+    "positionSelected":"Selecionado",
+    "clearAll":"Limpar todos os stickers"
 }

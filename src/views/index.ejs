@@ -115,6 +115,8 @@
                         <label class="form-label small mb-1"><%= lang.rotation %>: <span id="sticker3dRotVal">0&deg;</span></label>
                         <input type="range" id="sticker3dRot" class="slider w-100" min="0" max="360" step="1" value="0">
 
+                        <button type="button" class="btn btn-sm btn-outline-danger w-100 mt-3" onclick="clearAllStickers()"><i class="fa-solid fa-trash"></i> <%= lang.clearAll %></button>
+
                         <div class="mt-auto d-flex gap-2 flex-wrap pt-3">
                             <button type="button" class="btn btn-sm btn-outline-light" onclick="resetStickerEditor()"><%= lang.reset %></button>
                             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="closeStickerEditor()"><%= lang.cancel %></button>

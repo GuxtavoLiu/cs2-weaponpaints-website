@@ -460,6 +460,7 @@ window.stickerEditorAPI = {
     getStickerName: (id) => (stickersById && stickersById[id] ? stickersById[id].name : ''),
     getTransform: (slot) => getStickerTransform(slot),
     setTransform: (slot, t) => setStickerTransform(slot, t),
+    clearSlot: (slot) => clearSticker(slot),
     // The weapon currently open in the edit modal (defindex + display name).
     getCurrentWeapon: () => ({ defindex: currentWeaponId, name: (document.getElementById('modalWeapon') || {}).innerText || '' }),
 }
