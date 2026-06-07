@@ -242,6 +242,7 @@ const renderStickerSlot = (slot, id, wear, transform) => {
     const plus = document.getElementById(`stickerPlus-${slot}`)
     const clearBtn = document.getElementById(`stickerClear-${slot}`)
     const applyAllBtn = document.getElementById(`stickerApplyAll-${slot}`)
+    const posBtn = document.getElementById(`stickerPos-${slot}`)
     const wearWrap = slotEl.querySelector('.sticker-wear-wrap')
     const wearInput = document.getElementById(`stickerWear-${slot}`)
     const wearVal = document.getElementById(`stickerWearVal-${slot}`)
@@ -259,6 +260,7 @@ const renderStickerSlot = (slot, id, wear, transform) => {
         plus.style.display = sticker ? 'none' : 'block'
         clearBtn.style.display = 'inline-block'
         if (applyAllBtn) applyAllBtn.style.display = 'flex'
+        if (posBtn) posBtn.style.display = 'inline-block'
         wearWrap.style.display = 'block'
         const w = Number.isFinite(wear) ? wear : 0
         wearInput.value = w
@@ -270,6 +272,7 @@ const renderStickerSlot = (slot, id, wear, transform) => {
         plus.style.display = 'block'
         clearBtn.style.display = 'none'
         if (applyAllBtn) applyAllBtn.style.display = 'none'
+        if (posBtn) posBtn.style.display = 'none'
         wearWrap.style.display = 'none'
         wearInput.value = 0
         wearVal.innerText = '0.00'

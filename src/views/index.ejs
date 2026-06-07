@@ -47,7 +47,10 @@
                                     <span id="stickerPlus-<%= i %>" class="sticker-plus"><i class="fa-solid fa-plus"></i></span>
                                     <button type="button" id="stickerApplyAll-<%= i %>" class="sticker-apply-all" title="<%= lang.applyToAll %>" style="display:none;" onclick="applyStickerToAll(event, <%= i %>)"><i class="fa-solid fa-clone"></i></button>
                                 </div>
-                                <button type="button" id="stickerClear-<%= i %>" class="btn btn-sm btn-link text-danger p-0 sticker-clear" style="display:none;" onclick="clearSticker(<%= i %>)"><i class="fa-solid fa-xmark"></i> <%= lang.clear %></button>
+                                <div class="sticker-slot-actions d-flex justify-content-center gap-2">
+                                    <button type="button" id="stickerPos-<%= i %>" class="btn btn-sm btn-link text-info p-0 sticker-pos" style="display:none;" onclick="openStickerEditor(<%= i %>)" title="<%= lang.position %>"><i class="fa-solid fa-up-down-left-right"></i> <%= lang.position %></button>
+                                    <button type="button" id="stickerClear-<%= i %>" class="btn btn-sm btn-link text-danger p-0 sticker-clear" style="display:none;" onclick="clearSticker(<%= i %>)"><i class="fa-solid fa-xmark"></i> <%= lang.clear %></button>
+                                </div>
                                 <div class="sticker-wear-wrap" style="display:none;">
                                     <input type="range" id="stickerWear-<%= i %>" class="slider sticker-wear" min="0" max="1" step="0.01" value="0" oninput="onStickerWearInput(<%= i %>)">
                                     <small><%= lang.stickerWear %>: <span id="stickerWearVal-<%= i %>">0.00</span></small>
@@ -93,6 +96,39 @@
                         </div>
                     </div>
                     <div id="stickerResults" class="sticker-results-grid"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3D sticker placement editor. Sibling of #stickerPicker (inside
+             #patternFloat) so it sits above the modal and covers the viewport. -->
+        <div id="sticker3dEditor" class="sticker3d-overlay">
+            <div class="sticker3d-dialog bg-color text-light">
+                <div class="sticker3d-header bg-nav">
+                    <h5 class="m-0"><%= lang.positionTitle %> <span id="sticker3dSlotLabel" class="text-secondary"></span></h5>
+                    <button type="button" class="btn-close btn-close-white" onclick="closeStickerEditor()" aria-label="Close"></button>
+                </div>
+                <div class="sticker3d-body">
+                    <div id="sticker3dCanvas" class="sticker3d-canvas"></div>
+                    <div class="sticker3d-side">
+                        <div class="btn-group btn-group-sm w-100 mb-2" role="group">
+                            <button type="button" id="sticker3dModeCam" class="btn btn-outline-light active"><i class="fa-solid fa-arrows-rotate"></i> <%= lang.positionCamera %></button>
+                            <button type="button" id="sticker3dModeMove" class="btn btn-outline-light"><i class="fa-solid fa-hand"></i> <%= lang.positionMove %></button>
+                        </div>
+                        <div id="sticker3dStatus" class="small text-secondary mb-3"></div>
+
+                        <label class="form-label small mb-1"><%= lang.rotation %>: <span id="sticker3dRotVal">0&deg;</span></label>
+                        <input type="range" id="sticker3dRot" class="slider w-100" min="0" max="360" step="1" value="0">
+
+                        <label class="form-label small mb-1 mt-2"><%= lang.scale %>: <span id="sticker3dScaleVal">1.00</span></label>
+                        <input type="range" id="sticker3dScale" class="slider w-100" min="0.2" max="3" step="0.01" value="1">
+
+                        <div class="mt-auto d-flex gap-2 flex-wrap pt-3">
+                            <button type="button" class="btn btn-sm btn-outline-light" onclick="resetStickerEditor()"><%= lang.reset %></button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="closeStickerEditor()"><%= lang.cancel %></button>
+                            <button type="button" class="btn btn-sm btn-primary ms-auto" onclick="saveStickerEditor()"><%= lang.save %></button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

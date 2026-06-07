@@ -10,10 +10,12 @@
 
 <script type="module" src="<%= subdir %>js/templates.js"></script>
 <script type="module" src="<%= subdir %>js/sideBtns.js"></script>
+<script type="module" src="<%= subdir %>js/sticker3d.js"></script>
 
 <script>
+    let subdir = "<%= subdir %>";
     let lang = "<%- langCode %>";
-    let langObject = <%- JSON.stringify(lang) %>; 
+    let langObject = <%- JSON.stringify(lang) %>;
     let selectedKnife = {
         knife: undefined,
         steamid: undefined,

@@ -203,6 +203,31 @@ app.get(`${config.SUBDIR}api/lang/:code`, (req, res) => {
   res.redirect(req.get("Referer") || config.SUBDIR);
 });
 
+// Same-origin proxy for sticker images. The Steam CDN serves them without a
+// CORS header, so the 3D sticker editor can't use them directly as WebGL
+// textures. We re-serve them from our own origin. Whitelisted Steam hosts only,
+// so this can't be abused as an open proxy / SSRF vector.
+const STICKER_IMG_HOSTS = /(^|\.)steamstatic\.com$|(^|\.)steamcommunity\.com$/i;
+app.get(`${config.SUBDIR}api/sticker-img`, async (req, res) => {
+  try {
+    const raw = req.query.u;
+    if (!raw) return res.status(400).end();
+    const url = new URL(String(raw));
+    if (url.protocol !== "https:" || !STICKER_IMG_HOSTS.test(url.hostname)) {
+      return res.status(403).end();
+    }
+    const upstream = await fetch(url.href);
+    if (!upstream.ok) return res.status(upstream.status).end();
+    const buf = Buffer.from(await upstream.arrayBuffer());
+    res.set("Content-Type", upstream.headers.get("content-type") || "image/png");
+    res.set("Cache-Control", "public, max-age=604800");
+    res.set("Access-Control-Allow-Origin", "*");
+    res.send(buf);
+  } catch (e) {
+    res.status(502).end();
+  }
+});
+
 app.get(
   `${config.SUBDIR}api/auth/steam`,
   passport.authenticate("steam", { failureRedirect: config.SUBDIR }),

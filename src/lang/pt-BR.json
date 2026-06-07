@@ -65,5 +65,19 @@
     "inspectApply":"Aplicar",
     "inspectOk":"Item aplicado!",
     "inspectInvalid":"Link de inspeção inválido.",
-    "inspectUnmasked":"Este link não pode ser lido offline. Cole um link gerado pelo jogo (masked)."
+    "inspectUnmasked":"Este link não pode ser lido offline. Cole um link gerado pelo jogo (masked).",
+    "position":"Posicionar",
+    "positionTitle":"Posicionar sticker",
+    "positionCamera":"Câmera",
+    "positionMove":"Mover",
+    "rotation":"Rotação",
+    "scale":"Escala",
+    "reset":"Resetar",
+    "cancel":"Cancelar",
+    "save":"Salvar",
+    "positionHelp":"Toque na arma para colar o sticker. Arraste para girar a câmera.",
+    "positionNoModel":"Ainda não há modelo 3D para esta arma - usando um placeholder. O posicionamento ainda é salvo.",
+    "positionReset":"Posição resetada. Toque na arma para colar de novo.",
+    "positionSavedAt":"Salvo em",
+    "positionRetap":"toque para reposicionar"
 }

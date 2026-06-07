@@ -61,5 +61,19 @@
     "inspectApply":"应用",
     "inspectOk":"已应用物品！",
     "inspectInvalid":"无效的检视链接。",
-    "inspectUnmasked":"该检视链接无法离线读取。请粘贴游戏生成的链接（masked）。"
+    "inspectUnmasked":"该检视链接无法离线读取。请粘贴游戏生成的链接（masked）。",
+    "position":"位置",
+    "positionTitle":"放置印花",
+    "positionCamera":"镜头",
+    "positionMove":"移动",
+    "rotation":"旋转",
+    "scale":"缩放",
+    "reset":"重置",
+    "cancel":"取消",
+    "save":"保存",
+    "positionHelp":"点击武器以放置印花。拖动以旋转视角。",
+    "positionNoModel":"该武器暂无 3D 模型，使用占位模型。位置仍会保存。",
+    "positionReset":"位置已重置。点击武器重新放置。",
+    "positionSavedAt":"保存于",
+    "positionRetap":"点击重新放置"
 }
