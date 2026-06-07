@@ -75,5 +75,7 @@
     "positionNoModel":"该武器暂无 3D 模型，使用占位模型。位置仍会保存。",
     "positionReset":"位置已重置。点击武器重新放置。",
     "positionSavedAt":"保存于",
-    "positionRetap":"点击重新放置"
+    "positionRetap":"点击重新放置",
+    "positionClickSelect":"点击印花进行选择。右键拖动移动，滚轮旋转。",
+    "positionSelected":"已选择"
 }

@@ -82,5 +82,7 @@
     "positionNoModel":"No 3D model for this weapon yet - using a placeholder. Placement still saves.",
     "positionReset":"Placement reset. Tap the weapon to place again.",
     "positionSavedAt":"Saved at",
-    "positionRetap":"tap to re-place"
+    "positionRetap":"tap to re-place",
+    "positionClickSelect":"Click a sticker to select it. Right-drag moves it, scroll rotates.",
+    "positionSelected":"Selected"
 }

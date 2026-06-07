@@ -79,5 +79,7 @@
     "positionNoModel":"Ainda não há modelo 3D para esta arma - usando um placeholder. O posicionamento ainda é salvo.",
     "positionReset":"Posição resetada. Toque na arma para colar de novo.",
     "positionSavedAt":"Salvo em",
-    "positionRetap":"toque para reposicionar"
+    "positionRetap":"toque para reposicionar",
+    "positionClickSelect":"Clique num sticker para selecionar. Botão direito move, scroll rotaciona.",
+    "positionSelected":"Selecionado"
 }
