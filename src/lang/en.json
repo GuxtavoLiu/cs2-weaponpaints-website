@@ -78,7 +78,7 @@
     "reset":"Reset",
     "cancel":"Cancel",
     "save":"Save",
-    "positionHelp":"Tap the weapon to place the sticker. Drag to rotate the view.",
+    "positionHelp":"Click to place the sticker. Right-drag to move it, scroll to rotate. Left-drag orbits the camera.",
     "positionNoModel":"No 3D model for this weapon yet - using a placeholder. Placement still saves.",
     "positionReset":"Placement reset. Tap the weapon to place again.",
     "positionSavedAt":"Saved at",

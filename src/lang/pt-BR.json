@@ -75,7 +75,7 @@
     "reset":"Resetar",
     "cancel":"Cancelar",
     "save":"Salvar",
-    "positionHelp":"Toque na arma para colar o sticker. Arraste para girar a câmera.",
+    "positionHelp":"Clique para colar o sticker. Botão direito arrasta, scroll rotaciona. Arraste com o esquerdo para girar a câmera.",
     "positionNoModel":"Ainda não há modelo 3D para esta arma - usando um placeholder. O posicionamento ainda é salvo.",
     "positionReset":"Posição resetada. Toque na arma para colar de novo.",
     "positionSavedAt":"Salvo em",

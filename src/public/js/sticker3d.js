@@ -61,7 +61,6 @@ let stickerTex = null
 let baseSize = 1               // visual decal size unit (relative to model)
 let decalDepth = 1
 let slot = 0
-let moveMode = false
 let loadedDefindex = null
 const objLoader = new OBJLoader()
 const texLoader = new THREE.TextureLoader()
@@ -100,11 +99,18 @@ function initScene() {
     controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
     controls.dampingFactor = 0.1
+    // Left drag orbits the camera. The right button and the wheel are reserved
+    // for the sticker (move / rotate), so disable OrbitControls pan and zoom.
+    controls.enablePan = false
+    controls.enableZoom = false
+    controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: null, RIGHT: null }
 
     const dom = renderer.domElement
     dom.addEventListener('pointerdown', onPointerDown)
     dom.addEventListener('pointermove', onPointerMove)
     window.addEventListener('pointerup', onPointerUp)
+    dom.addEventListener('wheel', onWheel, { passive: false })
+    dom.addEventListener('contextmenu', (e) => e.preventDefault())
 
     const loop = () => { animHandle = requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera) }
     loop()
@@ -207,6 +213,7 @@ function buildDecal() {
 // Picking / interaction
 // ---------------------------------------------------------------------------
 let downPos = null
+let draggingSticker = false
 function eventToPointer(e) {
     const rect = renderer.domElement.getBoundingClientRect()
     pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
@@ -227,28 +234,45 @@ function pickSurface() {
     return true
 }
 function onPointerDown(e) {
-    downPos = { x: e.clientX, y: e.clientY }
-    if (moveMode) {
+    if (e.button === 2) {
+        // Right button: place / drag the sticker (never orbits the camera).
+        e.preventDefault()
+        draggingSticker = true
+        controls.enabled = false
+        try { renderer.domElement.setPointerCapture(e.pointerId) } catch (_) {}
         eventToPointer(e)
-        if (pickSurface()) { controls.enabled = false }
+        pickSurface()
+        return
     }
+    if (e.button === 0) downPos = { x: e.clientX, y: e.clientY } // left = orbit / tap-to-place
 }
 function onPointerMove(e) {
-    if (moveMode && !controls.enabled && (e.buttons & 1)) {
+    if (draggingSticker && (e.buttons & 2)) {
         eventToPointer(e)
         pickSurface()
     }
 }
 function onPointerUp(e) {
-    if (!downPos) { controls.enabled = true; return }
-    const moved = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y)
-    // A near-stationary click (in camera mode) places the sticker.
-    if (!moveMode && moved < 5) {
-        eventToPointer(e)
-        pickSurface()
+    if (draggingSticker) {
+        draggingSticker = false
+        controls.enabled = true
+        try { renderer.domElement.releasePointerCapture(e.pointerId) } catch (_) {}
+        return
     }
+    if (!downPos) return
+    const moved = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y)
+    if (moved < 5) { eventToPointer(e); pickSurface() } // left tap places the sticker
     downPos = null
-    controls.enabled = true
+}
+// Wheel over the canvas rotates the placed sticker.
+function onWheel(e) {
+    if (!place.position) return
+    e.preventDefault()
+    place.rotationDeg = normRot(place.rotationDeg + (e.deltaY > 0 ? 4 : -4))
+    const rot = $('sticker3dRot'); if (rot) rot.value = place.rotationDeg
+    const rv = $('sticker3dRotVal'); if (rv) rv.innerText = `${place.rotationDeg}°`
+    buildDecal()
+    updateStatus()
 }
 
 // ---------------------------------------------------------------------------
@@ -295,7 +319,6 @@ async function openStickerEditor(s) {
     $('sticker3dRotVal').innerText = `${place.rotationDeg}°`
     $('sticker3dScale').value = place.scale
     $('sticker3dScaleVal').innerText = place.scale.toFixed(2)
-    setMoveMode(false)
 
     await loadWeapon(weapon.defindex)
     // If a saved placement exists we cannot perfectly reproject without the
@@ -342,16 +365,6 @@ function saveStickerEditor() {
     closeStickerEditor()
 }
 
-function setMoveMode(on) {
-    moveMode = !!on
-    const camBtn = $('sticker3dModeCam'), movBtn = $('sticker3dModeMove')
-    if (camBtn && movBtn) {
-        camBtn.classList.toggle('active', !moveMode)
-        movBtn.classList.toggle('active', moveMode)
-    }
-    if (controls) controls.enabled = true
-}
-
 function normRot(r) { r = Math.round(Number(r) || 0); r %= 360; if (r < 0) r += 360; return r }
 
 // Slider wiring (deferred until DOM exists)
@@ -365,9 +378,6 @@ function wireControls() {
         scl._wired = true
         scl.addEventListener('input', () => { place.scale = parseFloat(scl.value) || 1; $('sticker3dScaleVal').innerText = place.scale.toFixed(2); buildDecal(); updateStatus() })
     }
-    const camBtn = $('sticker3dModeCam'), movBtn = $('sticker3dModeMove')
-    if (camBtn && !camBtn._wired) { camBtn._wired = true; camBtn.addEventListener('click', () => setMoveMode(false)) }
-    if (movBtn && !movBtn._wired) { movBtn._wired = true; movBtn.addEventListener('click', () => setMoveMode(true)) }
 }
 
 window.addEventListener('resize', resize)

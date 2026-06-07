@@ -71,7 +71,7 @@
     "reset":"重置",
     "cancel":"取消",
     "save":"保存",
-    "positionHelp":"点击武器以放置印花。拖动以旋转视角。",
+    "positionHelp":"点击放置印花。右键拖动移动，滚轮旋转。左键拖动旋转视角。",
     "positionNoModel":"该武器暂无 3D 模型，使用占位模型。位置仍会保存。",
     "positionReset":"位置已重置。点击武器重新放置。",
     "positionSavedAt":"保存于",

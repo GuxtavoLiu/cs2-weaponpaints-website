@@ -33,14 +33,12 @@
                         <label class="form-check-label" for="stattrak"><%= lang.stattrak %></label>
                     </div>
 
-                    <!-- Stickers: 4 slots, default position, per-slot wear slider.
-                         CS2 weapon models only define 4 sticker positions; the 5th
-                         DB slot has no predefined spot and won't render when applied
-                         at the default position, so it's hidden from the UI. -->
+                    <!-- Stickers: 5 slots (CS2 supports up to 5), per-slot wear
+                         slider, and a 3D editor to position each one. -->
                     <div class="w-100 mt-4">
                         <label class="form-label m-0 d-block text-center"><%= lang.stickers %></label>
                         <div class="d-flex justify-content-center flex-wrap mt-2" id="stickerSlots">
-                            <% for (let i = 0; i < 4; i++) { %>
+                            <% for (let i = 0; i < 5; i++) { %>
                             <div class="sticker-slot text-center mx-1 mb-2" data-slot="<%= i %>">
                                 <div class="sticker-thumb position-relative" onclick="openStickerPicker(<%= i %>)">
                                     <img id="stickerImg-<%= i %>" src="" alt="" class="sticker-img">
@@ -111,11 +109,8 @@
                 <div class="sticker3d-body">
                     <div id="sticker3dCanvas" class="sticker3d-canvas"></div>
                     <div class="sticker3d-side">
-                        <div class="btn-group btn-group-sm w-100 mb-2" role="group">
-                            <button type="button" id="sticker3dModeCam" class="btn btn-outline-light active"><i class="fa-solid fa-arrows-rotate"></i> <%= lang.positionCamera %></button>
-                            <button type="button" id="sticker3dModeMove" class="btn btn-outline-light"><i class="fa-solid fa-hand"></i> <%= lang.positionMove %></button>
-                        </div>
-                        <div id="sticker3dStatus" class="small text-secondary mb-3"></div>
+                        <div class="sticker3d-legend small text-secondary mb-2"><%= lang.positionHelp %></div>
+                        <div id="sticker3dStatus" class="small mb-3"></div>
 
                         <label class="form-label small mb-1"><%= lang.rotation %>: <span id="sticker3dRotVal">0&deg;</span></label>
                         <input type="range" id="sticker3dRot" class="slider w-100" min="0" max="360" step="1" value="0">
