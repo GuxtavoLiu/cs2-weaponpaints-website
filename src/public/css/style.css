@@ -1019,13 +1019,23 @@ li {
 }
 
 /* ---- 3D sticker placement editor ---- */
-.sticker-slot-actions { margin-top: 2px; }
+.sticker-slot-actions { margin-top: 3px; gap: 1px; }
+.sticker-slot-actions .sticker-pos,
+.sticker-slot-actions .sticker-clear {
+    white-space: nowrap;
+    font-size: 0.72rem;
+    line-height: 1.2;
+    text-decoration: none;
+}
+.sticker-slot-actions .sticker-pos i,
+.sticker-slot-actions .sticker-clear i { font-size: 0.7rem; }
+.sticker-slot-actions .sticker-pos:hover,
+.sticker-slot-actions .sticker-clear:hover { text-decoration: underline; }
 .sticker-slot.positioned .sticker-thumb {
     outline: 2px solid #4ea1ff;
     outline-offset: 1px;
     border-radius: 6px;
 }
-.sticker-pos { white-space: nowrap; }
 
 .sticker3d-overlay {
     display: none;

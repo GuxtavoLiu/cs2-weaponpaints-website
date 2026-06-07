@@ -47,7 +47,7 @@
                                     <span id="stickerPlus-<%= i %>" class="sticker-plus"><i class="fa-solid fa-plus"></i></span>
                                     <button type="button" id="stickerApplyAll-<%= i %>" class="sticker-apply-all" title="<%= lang.applyToAll %>" style="display:none;" onclick="applyStickerToAll(event, <%= i %>)"><i class="fa-solid fa-clone"></i></button>
                                 </div>
-                                <div class="sticker-slot-actions d-flex justify-content-center gap-2">
+                                <div class="sticker-slot-actions d-flex flex-column align-items-center">
                                     <button type="button" id="stickerPos-<%= i %>" class="btn btn-sm btn-link text-info p-0 sticker-pos" style="display:none;" onclick="openStickerEditor(<%= i %>)" title="<%= lang.position %>"><i class="fa-solid fa-up-down-left-right"></i> <%= lang.position %></button>
                                     <button type="button" id="stickerClear-<%= i %>" class="btn btn-sm btn-link text-danger p-0 sticker-clear" style="display:none;" onclick="clearSticker(<%= i %>)"><i class="fa-solid fa-xmark"></i> <%= lang.clear %></button>
                                 </div>
