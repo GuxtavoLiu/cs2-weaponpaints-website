@@ -94,19 +94,29 @@ function initScene() {
     controls.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: null, RIGHT: null }
 
     const dom = renderer.domElement
-    dom.addEventListener('pointerdown', onPointerDown)
     dom.addEventListener('pointermove', onPointerMove)
     window.addEventListener('pointerup', onPointerUp)
     dom.addEventListener('wheel', onWheel, { passive: false })
     dom.addEventListener('contextmenu', (e) => e.preventDefault())
 
-    // Capture-phase pre-empt on the container: OrbitControls' own pointerdown
-    // (on the canvas) captures the pointer and adds listeners before checking the
-    // button. By disabling controls here, in the capture phase on the parent, a
-    // right-button press on a selected sticker makes OrbitControls bail (it returns
-    // when enabled===false) so the right-drag moves the sticker, not the camera.
+    // Capture-phase grab decision on the container. OrbitControls' own pointerdown
+    // (on the canvas) captures the pointer and starts orbiting before we can react,
+    // so we decide here - in the capture phase on the PARENT, before OrbitControls'
+    // canvas handler runs - whether this gesture grabs a sticker (disable controls
+    // so the drag moves the sticker) or lets the camera orbit. OrbitControls bails
+    // when enabled === false.
     mount.addEventListener('pointerdown', (e) => {
-        if (e.button === 2 && selIndex >= 0) controls.enabled = false
+        eventToPointer(e)
+        const hit = raycastModel()
+        const overIdx = hit ? itemAtPoint(hit.point) : -1
+        pendingTap = { x: e.clientX, y: e.clientY, button: e.button, overIdx }
+        // Move when: right button with a selection, OR left-drag starting on the
+        // already-selected sticker.
+        grabbing = (e.button === 2 && selIndex >= 0) || (e.button === 0 && overIdx >= 0 && overIdx === selIndex)
+        if (grabbing) {
+            controls.enabled = false
+            try { renderer.domElement.setPointerCapture(e.pointerId) } catch (_) {}
+        }
     }, true)
 
     const loop = () => { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera) }
@@ -214,7 +224,9 @@ function buildItemDecal(it) {
     if (it.mesh) { scene.remove(it.mesh); it.mesh.geometry.dispose(); it.mesh.material.dispose(); it.mesh = null }
     if (!it.pos || !it.object || !it.tex) return
     const orientation = new THREE.Euler().copy(orientationFor(it).rotation)
-    const s = baseSize * it.scale
+    // Stickers in CS2 have a fixed size (you cannot scale them), so the decal uses
+    // a constant visual size; we never expose or change scale.
+    const s = baseSize
     const geo = new DecalGeometry(it.object, it.pos, orientation, new THREE.Vector3(s, s, decalDepth))
     const mat = new THREE.MeshBasicMaterial({ map: it.tex, transparent: true, depthTest: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4 })
     it.mesh = new THREE.Mesh(geo, mat)
@@ -227,7 +239,7 @@ function rebuildOutline() {
     const d = orientationFor(it)
     const x = new THREE.Vector3().setFromMatrixColumn(d.matrix, 0).normalize()
     const y = new THREE.Vector3().setFromMatrixColumn(d.matrix, 1).normalize()
-    const half = (baseSize * it.scale) / 2
+    const half = baseSize / 2
     const c = it.pos.clone().addScaledVector(it.normal, half * 0.2)
     const pts = [
         c.clone().addScaledVector(x, half).addScaledVector(y, half),
@@ -252,8 +264,6 @@ function setSelected(i) {
         $('sticker3dSlotLabel').innerText = `#${it.slot + 1}`
         const rot = $('sticker3dRot'); if (rot) rot.value = it.rot
         const rv = $('sticker3dRotVal'); if (rv) rv.innerText = `${it.rot}°`
-        const sc = $('sticker3dScale'); if (sc) sc.value = it.scale
-        const sv = $('sticker3dScaleVal'); if (sv) sv.innerText = it.scale.toFixed(2)
     } else {
         $('sticker3dSlotLabel').innerText = ''
     }
@@ -263,8 +273,8 @@ function setSelected(i) {
 // ---------------------------------------------------------------------------
 // Picking / interaction
 // ---------------------------------------------------------------------------
-let downPos = null
-let dragging = false
+let grabbing = false
+let pendingTap = null
 function eventToPointer(e) {
     const rect = renderer.domElement.getBoundingClientRect()
     pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1
@@ -289,7 +299,7 @@ function itemAtPoint(point) {
     for (let i = 0; i < items.length; i++) {
         const it = items[i]
         if (!it.pos) continue
-        const r = baseSize * it.scale * 0.7
+        const r = baseSize * 0.7
         const d = it.pos.distanceTo(point)
         if (d < r && d < best) { best = d; bi = i }
     }
@@ -303,41 +313,22 @@ function moveSelectedTo(hit) {
     it.dirty = true
     buildItemDecal(it); rebuildOutline(); updateStatus()
 }
-function onPointerDown(e) {
-    if (e.button === 2) {
-        // Right button drags the selected sticker.
-        if (selIndex < 0) return
-        e.preventDefault()
-        dragging = true
-        controls.enabled = false
-        try { renderer.domElement.setPointerCapture(e.pointerId) } catch (_) {}
-        eventToPointer(e); moveSelectedTo(raycastModel())
-        return
-    }
-    if (e.button === 0) downPos = { x: e.clientX, y: e.clientY }
-}
+// While grabbing (left button on the selected sticker, or right button), the drag
+// moves the sticker along the surface. Otherwise the camera orbits (OrbitControls).
 function onPointerMove(e) {
-    if (dragging && (e.buttons & 2)) { eventToPointer(e); moveSelectedTo(raycastModel()) }
+    if (grabbing && (e.buttons & 3)) { eventToPointer(e); moveSelectedTo(raycastModel()) }
 }
 function onPointerUp(e) {
-    if (dragging) {
-        dragging = false
-        try { renderer.domElement.releasePointerCapture(e.pointerId) } catch (_) {}
-        controls.enabled = true
-        return
+    const wasGrab = grabbing
+    grabbing = false
+    try { renderer.domElement.releasePointerCapture(e.pointerId) } catch (_) {}
+    controls.enabled = true // restore after any capture-phase grab
+    if (pendingTap && !wasGrab) {
+        const moved = Math.hypot(e.clientX - pendingTap.x, e.clientY - pendingTap.y)
+        // A left tap selects the sticker under the cursor, or deselects.
+        if (moved < 5 && pendingTap.button === 0) setSelected(pendingTap.overIdx >= 0 ? pendingTap.overIdx : -1)
     }
-    if (downPos) {
-        const moved = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y)
-        if (moved < 5) {
-            // Left tap: select the sticker under the cursor, or deselect.
-            eventToPointer(e)
-            const hit = raycastModel()
-            setSelected(hit ? itemAtPoint(hit.point) : -1)
-        }
-        downPos = null
-    }
-    // Always restore camera control (e.g. after the capture-phase pre-empt above).
-    controls.enabled = true
+    pendingTap = null
 }
 // Wheel rotates the selected sticker; with nothing selected OrbitControls zooms.
 function onWheel(e) {
@@ -359,7 +350,7 @@ function updateStatus() {
     const it = sel()
     if (!it || !it.uv) { setStatus(t('positionClickSelect', 'Click a sticker to select it.')); return }
     const g = uvToGame(it.uv.u, it.uv.v, loadedDefindex)
-    setStatus(`${t('positionSelected', 'Selected')} #${it.slot + 1}  ·  x ${g.x.toFixed(3)}  ·  y ${g.y.toFixed(3)}  ·  ${it.rot}°  ·  ${it.scale.toFixed(2)}×`)
+    setStatus(`${t('positionSelected', 'Selected')} #${it.slot + 1}  ·  x ${g.x.toFixed(3)}  ·  y ${g.y.toFixed(3)}  ·  ${it.rot}°`)
 }
 
 // ---------------------------------------------------------------------------
@@ -400,7 +391,8 @@ async function openStickerEditor(s) {
             slot: i, id, tex: null, mesh: null,
             pos: sp ? sp.point : null, normal: sp ? sp.normal : new THREE.Vector3(0, 0, 1),
             object: sp ? sp.object : null, uv,
-            rot: gameRotToScreen(tr.rotation), scale: tr.scale > 0 ? tr.scale : 1,
+            rot: gameRotToScreen(tr.rotation),
+            savedScale: tr.scale || 0, // CS2 can't resize stickers; keep the original value
         }
         const imgUrl = api.getStickerImage(id)
         if (imgUrl) {
@@ -426,7 +418,7 @@ function resetStickerEditor() {
     const it = sel()
     if (!it) return
     it.dirty = true
-    it.rot = 0; it.scale = 1
+    it.rot = 0
     const sp = findSurfacePointForUV(0.5, 0.5)
     if (sp) { it.pos = sp.point; it.normal = sp.normal; it.object = sp.object; it.uv = { u: 0.5, v: 0.5 } }
     buildItemDecal(it)
@@ -441,7 +433,9 @@ function saveStickerEditor() {
         items.forEach((it) => {
             if (!it.uv || !it.dirty) return
             const g = uvToGame(it.uv.u, it.uv.v, loadedDefindex)
-            api.setTransform(it.slot, { x: g.x, y: g.y, scale: +it.scale.toFixed(4), rotation: screenRotToGame(it.rot) })
+            // Preserve the original scale (CS2 stickers can't be resized); we only
+            // ever change position and rotation.
+            api.setTransform(it.slot, { x: g.x, y: g.y, scale: it.savedScale || 0, rotation: screenRotToGame(it.rot) })
         })
     }
     closeStickerEditor()
@@ -450,14 +444,10 @@ function saveStickerEditor() {
 function normRot(r) { r = Math.round(Number(r) || 0); r %= 360; if (r < 0) r += 360; return r }
 
 function wireControls() {
-    const rot = $('sticker3dRot'), scl = $('sticker3dScale')
+    const rot = $('sticker3dRot')
     if (rot && !rot._wired) {
         rot._wired = true
         rot.addEventListener('input', () => { const it = sel(); if (!it) return; it.dirty = true; it.rot = normRot(rot.value); $('sticker3dRotVal').innerText = `${it.rot}°`; buildItemDecal(it); rebuildOutline(); updateStatus() })
-    }
-    if (scl && !scl._wired) {
-        scl._wired = true
-        scl.addEventListener('input', () => { const it = sel(); if (!it) return; it.dirty = true; it.scale = parseFloat(scl.value) || 1; $('sticker3dScaleVal').innerText = it.scale.toFixed(2); buildItemDecal(it); rebuildOutline(); updateStatus() })
     }
 }
 
