@@ -74,6 +74,8 @@ let place = { hit: null, position: null, normal: null, uv: null, object: null, r
 
 const $ = (id) => document.getElementById(id)
 const t = (k, fallback) => (typeof langObject !== 'undefined' && langObject[k]) || fallback
+// Bridge exposed by index.js to read/write the sticker slot state.
+const API = () => window.stickerEditorAPI
 
 // ---------------------------------------------------------------------------
 // Scene lifecycle
