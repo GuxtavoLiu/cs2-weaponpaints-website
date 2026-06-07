@@ -415,10 +415,19 @@ io.on("connection", (socket) => {
     const parts = s.split(";");
     const id = parseInt(parts[0], 10);
     if (!Number.isFinite(id) || id <= 0) return "0;0;0;0;0;0;0";
-    let wear = parseFloat(parts[4]);
-    if (!Number.isFinite(wear)) wear = 0;
+    const num = (v) => {
+      const n = parseFloat(v);
+      return Number.isFinite(n) ? +n.toFixed(6) : 0;
+    };
+    const x = num(parts[2]);
+    const y = num(parts[3]);
+    let wear = num(parts[4]);
     wear = Math.min(1, Math.max(0, wear));
-    return `${id};0;0;0;${wear};0;0`;
+    const scale = num(parts[5]);
+    const rotation = num(parts[6]);
+    // Preserve the placement (x/y/scale/rotation) from the 3D editor; only id and
+    // wear were kept before, which silently discarded any positioning.
+    return `${id};0;${x};${y};${wear};${scale};${rotation}`;
   };
 
   socket.on("change-params", (data) => {
