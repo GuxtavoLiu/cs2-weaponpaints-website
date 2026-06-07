@@ -442,6 +442,11 @@ const clearSticker = (slot) => {
     renderStickerSlot(slot, 0, 0)
 }
 
+// Clear every sticker slot at once (persisted when the user clicks Change).
+const clearAllSlots = () => {
+    for (let i = 0; i < STICKER_SLOTS; i++) clearSticker(i)
+}
+
 window.openStickerPicker = openStickerPicker
 window.closeStickerPicker = closeStickerPicker
 window.onStickerOverlayClick = onStickerOverlayClick
@@ -450,6 +455,7 @@ window.onStickerWearInput = onStickerWearInput
 window.renderStickerResults = renderStickerResults
 window.selectSticker = selectSticker
 window.clearSticker = clearSticker
+window.clearAllSlots = clearAllSlots
 window.applyStickerToAll = applyStickerToAll
 
 // API consumed by the 3D placement editor (sticker3d.js, an ES module).
