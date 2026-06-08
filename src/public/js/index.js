@@ -529,8 +529,6 @@ const changeParams = () => {
     for (let i = 0; i < STICKER_SLOTS; i++) {
         stickers.push(buildStickerString(i))
     }
-    // Diagnostic: shows exactly what the Change button sends (remove later).
-    console.log('[change-params] sending', { weaponid, paintid, stickers })
 
     document.getElementById('modalButton').innerHTML =
         `
