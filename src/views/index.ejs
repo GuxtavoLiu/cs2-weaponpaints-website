@@ -24,37 +24,40 @@
                         <button onclick="setFloat(0.38)" class="btn btn-primary floatButton"><%= lang.wellWornCode %></button>
                         <button onclick="setFloat(0.45)" class="btn btn-primary floatButton"><%= lang.battleScarredCode %></button>
                     </div>
-                    <div class="form-outline mx-auto mt-3">
-                        <label class="form-label m-0" for="pattern">Pattern</label>
-                        <input type="number" id="pattern" class="form-control" placeholder="Pattern" value="0" data-bs-theme="dark">
-                    </div>
-                    <div class="form-check form-switch mx-auto mt-3" id="stattrakWrapper">
-                        <input class="form-check-input" type="checkbox" role="switch" id="stattrak">
-                        <label class="form-check-label" for="stattrak"><%= lang.stattrak %></label>
+                    <!-- Pattern + StatTrak share one row to use the space better. -->
+                    <div class="modal-row mx-auto mt-3">
+                        <div class="form-outline pattern-field">
+                            <label class="form-label m-0" for="pattern"><%= lang.pattern %></label>
+                            <input type="number" id="pattern" class="form-control" placeholder="<%= lang.pattern %>" value="0" data-bs-theme="dark">
+                        </div>
+                        <div class="form-check form-switch stattrak-field" id="stattrakWrapper">
+                            <input class="form-check-input" type="checkbox" role="switch" id="stattrak">
+                            <label class="form-check-label" for="stattrak"><%= lang.stattrak %></label>
+                        </div>
                     </div>
 
-                    <!-- Stickers: 5 slots (CS2 supports up to 5), per-slot wear
-                         slider, and a 3D editor to position each one. -->
-                    <div class="w-100 mt-4">
-                        <label class="form-label m-0 d-block text-center"><%= lang.stickers %></label>
-                        <div class="text-center">
-                            <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="clearAllSlots()"><i class="fa-solid fa-trash"></i> <%= lang.clearAll %></button>
+                    <!-- Stickers: 4 slots, each with a per-slot wear slider. The
+                         per-sticker placement editor (openStickerEditor) is kept
+                         in the code but its button is hidden in the UI for now. -->
+                    <div class="w-100 mt-4" id="stickerSection">
+                        <div class="sticker-section-head">
+                            <label class="form-label m-0"><%= lang.stickers %></label>
+                            <button type="button" class="sticker-clear-all" onclick="clearAllSlots()"><i class="fa-solid fa-trash"></i> <%= lang.clearAll %></button>
                         </div>
-                        <div class="d-flex justify-content-center flex-wrap mt-2" id="stickerSlots">
-                            <% for (let i = 0; i < 5; i++) { %>
-                            <div class="sticker-slot text-center mx-1 mb-2" data-slot="<%= i %>">
-                                <div class="sticker-thumb position-relative" onclick="openStickerPicker(<%= i %>)">
+                        <div class="d-flex justify-content-center flex-wrap gap-3 mt-2" id="stickerSlots">
+                            <% for (let i = 0; i < 4; i++) { %>
+                            <div class="sticker-slot" data-slot="<%= i %>">
+                                <div class="sticker-thumb" onclick="openStickerPicker(<%= i %>)">
                                     <img id="stickerImg-<%= i %>" src="" alt="" class="sticker-img">
                                     <span id="stickerPlus-<%= i %>" class="sticker-plus"><i class="fa-solid fa-plus"></i></span>
                                     <button type="button" id="stickerApplyAll-<%= i %>" class="sticker-apply-all" title="<%= lang.applyToAll %>" style="display:none;" onclick="applyStickerToAll(event, <%= i %>)"><i class="fa-solid fa-clone"></i></button>
+                                    <button type="button" id="stickerClear-<%= i %>" class="sticker-clear-badge" title="<%= lang.clear %>" style="display:none;" onclick="event.stopPropagation(); clearSticker(<%= i %>)"><i class="fa-solid fa-xmark"></i></button>
                                 </div>
-                                <div class="sticker-slot-actions d-flex flex-column align-items-center">
-                                    <button type="button" id="stickerPos-<%= i %>" class="btn btn-sm btn-link text-info p-0 sticker-pos" style="display:none;" onclick="openStickerEditor(<%= i %>)" title="<%= lang.position %>"><i class="fa-solid fa-up-down-left-right"></i> <%= lang.position %></button>
-                                    <button type="button" id="stickerClear-<%= i %>" class="btn btn-sm btn-link text-danger p-0 sticker-clear" style="display:none;" onclick="clearSticker(<%= i %>)"><i class="fa-solid fa-xmark"></i> <%= lang.clear %></button>
-                                </div>
+                                <!-- Placement editor button kept in code; hidden in the UI for now. -->
+                                <button type="button" id="stickerPos-<%= i %>" class="sticker-pos" style="display:none;" onclick="openStickerEditor(<%= i %>)" title="<%= lang.position %>"><i class="fa-solid fa-up-down-left-right"></i></button>
                                 <div class="sticker-wear-wrap" style="display:none;">
                                     <input type="range" id="stickerWear-<%= i %>" class="slider sticker-wear" min="0" max="1" step="0.01" value="0" oninput="onStickerWearInput(<%= i %>)">
-                                    <small><%= lang.stickerWear %>: <span id="stickerWearVal-<%= i %>">0.00</span></small>
+                                    <small class="sticker-wear-label"><%= lang.stickerWear %> <span id="stickerWearVal-<%= i %>">0.00</span></small>
                                 </div>
                             </div>
                             <% } %>
@@ -101,22 +104,29 @@
             </div>
         </div>
 
-        <!-- 3D sticker placement editor. Sibling of #stickerPicker (inside
-             #patternFloat) so it sits above the modal and covers the viewport. -->
-        <div id="sticker3dEditor" class="sticker3d-overlay">
-            <div class="sticker3d-dialog bg-color text-light">
-                <div class="sticker3d-header bg-nav">
-                    <h5 class="m-0"><%= lang.positionTitle %> <span id="sticker3dSlotLabel" class="text-secondary"></span></h5>
+        <!-- 2D sticker placement editor. Sibling of #stickerPicker (inside
+             #patternFloat) so it sits above the modal and covers the viewport.
+             The current skin image is stretched into a per-weapon canvas; each
+             sticker is dragged on it and its placement maps to the game's
+             offset_x/offset_y so it matches in-game. -->
+        <div id="sticker2dEditor" class="sticker2d-overlay">
+            <div class="sticker2d-dialog bg-color text-light">
+                <div class="sticker2d-header bg-nav">
+                    <h5 class="m-0"><%= lang.positionTitle %> <span id="sticker2dSlotLabel" class="text-secondary"></span></h5>
                     <button type="button" class="btn-close btn-close-white" onclick="closeStickerEditor()" aria-label="Close"></button>
                 </div>
-                <div class="sticker3d-body">
-                    <div id="sticker3dCanvas" class="sticker3d-canvas"></div>
-                    <div class="sticker3d-side">
-                        <div class="sticker3d-legend small text-secondary mb-2"><%= lang.positionClickSelect %></div>
-                        <div id="sticker3dStatus" class="small mb-3"></div>
+                <div class="sticker2d-body">
+                    <div id="sticker2dStage" class="sticker2d-stage">
+                        <div id="sticker2dCanvas" class="sticker2d-canvas">
+                            <img id="sticker2dBg" class="sticker2d-bg" alt="" draggable="false">
+                        </div>
+                    </div>
+                    <div class="sticker2d-side">
+                        <div class="sticker2d-legend small text-secondary mb-2"><%= lang.positionHelp %></div>
+                        <div id="sticker2dStatus" class="small mb-3"></div>
 
-                        <label class="form-label small mb-1"><%= lang.rotation %>: <span id="sticker3dRotVal">0&deg;</span></label>
-                        <input type="range" id="sticker3dRot" class="slider w-100" min="0" max="360" step="1" value="0">
+                        <label class="form-label small mb-1"><%= lang.rotation %>: <span id="sticker2dRotVal">0&deg;</span></label>
+                        <input type="range" id="sticker2dRot" class="slider w-100" min="0" max="360" step="1" value="0">
 
                         <label class="form-label small mb-1 mt-3"><%= lang.defaultSlots %></label>
                         <div class="btn-group btn-group-sm w-100" role="group">

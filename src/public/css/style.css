@@ -756,63 +756,279 @@ li {
     padding-top: 5rem;
 }
 /* ---- Stickers ---- */
+/* ====================================================================
+   Float / pattern modal polish
+   ==================================================================== */
+#patternFloat .modal-content {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+#patternFloat .modal-header {
+    padding: 14px 20px;
+}
+#patternFloat .modal-body {
+    padding: 20px 24px 24px;
+}
+#patternFloat .modal-footer {
+    padding: 14px;
+}
+#modalImg {
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.55));
+    margin-bottom: 4px;
+}
+#patternFloat .modal-body > h5 {
+    font-weight: 600;
+    margin-top: 2px;
+    margin-bottom: 16px;
+}
+#patternFloat .form-outline {
+    width: 100%;
+    max-width: 300px;
+    text-align: center;
+}
+#patternFloat .form-label {
+    display: block;
+    font-size: .7rem;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: #8a8a8a;
+    font-weight: 600;
+    margin-bottom: 7px !important;
+}
+#patternFloat #float,
+#patternFloat #pattern {
+    text-align: center;
+    font-weight: 600;
+    background-color: #0c0c0c !important;
+    border: 1px solid #2a2a2a;
+    border-radius: 9px;
+    color: #eee;
+    padding: .5rem .75rem;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+#patternFloat #float:focus,
+#patternFloat #pattern:focus {
+    border-color: var(--lte-accent);
+    box-shadow: 0 0 0 .18rem rgba(var(--lte-accent-rgb), .2);
+}
+#floatText {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--lte-accent);
+    margin-top: 8px !important;
+}
+/* Pattern + StatTrak on one row */
+#patternFloat .modal-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 20px;
+    width: 100%;
+    max-width: 320px;
+}
+#patternFloat .modal-row .pattern-field {
+    flex: 1 1 auto;
+    max-width: none;
+    margin: 0;
+    text-align: center;
+}
+#patternFloat .modal-row .stattrak-field {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 0 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    white-space: nowrap;
+}
+/* Wear-tier segmented buttons (FN / MW / FT / WW / BS) */
+#patternFloat .btn-group {
+    display: flex;
+    width: 100%;
+    max-width: 320px;
+    gap: 4px;
+}
+.floatButton.btn-primary {
+    flex: 1;
+    background-color: #181818 !important;
+    border: 1px solid #2a2a2a !important;
+    color: #aaa !important;
+    font-weight: 600;
+    font-size: .82rem;
+    padding: .42rem 0;
+    border-radius: 8px !important;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+.floatButton.btn-primary:hover {
+    background-color: #242424 !important;
+    color: #fff !important;
+}
+.floatButton.btn-primary.active {
+    background-color: var(--lte-accent) !important;
+    border-color: var(--lte-accent) !important;
+    color: #1a1a1a !important;
+}
+/* StatTrak switch */
+#patternFloat .form-switch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 0;
+}
+#patternFloat .form-switch .form-check-input {
+    float: none;
+    margin: 0;
+    width: 2.4em;
+    height: 1.2em;
+    cursor: pointer;
+    background-color: #2a2a2a;
+    border-color: #3a3a3a;
+}
+#patternFloat .form-switch .form-check-input:checked {
+    background-color: var(--lte-accent);
+    border-color: var(--lte-accent);
+}
+#patternFloat .form-switch .form-check-input:focus {
+    border-color: var(--lte-accent);
+    box-shadow: 0 0 0 .18rem rgba(var(--lte-accent-rgb), .2);
+}
+#patternFloat .form-switch .form-check-label {
+    font-weight: 600;
+    color: #ddd;
+}
+#modalButton {
+    min-width: 170px;
+    font-weight: 600;
+    border-radius: 9px;
+    padding: .5rem 1.5rem;
+}
+/* Sticker section header (title + clear-all) */
+.sticker-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 4px;
+}
+.sticker-section-head .form-label {
+    margin: 0 !important;
+}
+.sticker-clear-all {
+    background: none;
+    border: none;
+    color: #c0504d;
+    font-size: .72rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 3px 7px;
+    border-radius: 6px;
+    transition: color .15s ease, background-color .15s ease;
+}
+.sticker-clear-all:hover {
+    color: #e06b67;
+    background-color: rgba(224, 107, 103, 0.1);
+}
+
 .sticker-slot {
-    width: 78px;
+    width: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 .sticker-thumb {
-    width: 64px;
-    height: 64px;
-    margin: 0 auto;
-    border: 1px dashed #555;
-    border-radius: 8px;
+    position: relative;
+    width: 72px;
+    height: 72px;
+    border: 1px dashed #3a3a3a;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    background-color: rgba(255, 255, 255, 0.03);
+    background-color: rgba(255, 255, 255, 0.025);
     transition: border-color .15s ease, background-color .15s ease;
 }
 .sticker-thumb:hover {
-    border-color: var(--bs-primary, #0d6efd);
-    background-color: rgba(255, 255, 255, 0.06);
+    border-color: var(--lte-accent);
+    background-color: rgba(var(--lte-accent-rgb), 0.08);
 }
 .sticker-img {
-    max-width: 60px;
-    max-height: 60px;
+    max-width: 62px;
+    max-height: 62px;
     display: none;
 }
 .sticker-plus {
-    color: #777;
-    font-size: 1.2rem;
+    color: #5a5a5a;
+    font-size: 1.3rem;
+    transition: color .15s ease;
+}
+.sticker-thumb:hover .sticker-plus {
+    color: var(--lte-accent);
 }
 .sticker-slot.filled .sticker-thumb {
     border-style: solid;
-    border-color: #777;
+    border-color: #3a3a3a;
+    background-color: rgba(255, 255, 255, 0.04);
 }
-.sticker-apply-all {
+.sticker-slot.filled .sticker-thumb:hover {
+    border-color: var(--lte-accent);
+}
+/* Corner badges (apply-to-all, clear) shown on filled slots. */
+.sticker-apply-all,
+.sticker-clear-badge {
     position: absolute;
-    top: -6px;
-    left: -6px;
     width: 22px;
     height: 22px;
     padding: 0;
-    border: none;
+    border: 2px solid var(--lte-primary-bg);
     border-radius: 50%;
-    background-color: var(--bs-primary, #0d6efd);
-    color: #fff;
-    font-size: .68rem;
     align-items: center;
     justify-content: center;
+    font-size: .6rem;
     cursor: pointer;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
     transition: transform .1s ease, background-color .15s ease;
 }
+.sticker-apply-all {
+    top: -8px;
+    left: -8px;
+    background-color: var(--lte-accent);
+    color: #1a1a1a;
+}
 .sticker-apply-all:hover {
-    transform: scale(1.12);
-    background-color: #0b5ed7;
+    transform: scale(1.14);
+    background-color: #ffbe6b;
+}
+.sticker-clear-badge {
+    top: -8px;
+    right: -8px;
+    background-color: #d24b4b;
+    color: #fff;
+}
+.sticker-clear-badge:hover {
+    transform: scale(1.14);
+    background-color: #e35e5e;
+}
+.sticker-wear-wrap {
+    width: 100%;
+    margin-top: 7px;
+    text-align: center;
 }
 .sticker-wear {
-    width: 70px;
+    width: 100%;
+    height: 4px;
+    margin-bottom: 2px;
+}
+.sticker-wear-label {
+    color: #888;
+    font-size: .66rem;
+    font-weight: 600;
+}
+/* Placement editor button is kept in the markup but hidden in the UI for now. */
+.sticker-pos {
+    display: none !important;
 }
 /* Big sticker picker overlay (lives inside #patternFloat) */
 .sticker-picker-overlay {
@@ -1018,26 +1234,13 @@ li {
     #skinsContainer.cards-sm .loadout-img { height: 95px; }
 }
 
-/* ---- 3D sticker placement editor ---- */
-.sticker-slot-actions { margin-top: 3px; gap: 1px; }
-.sticker-slot-actions .sticker-pos,
-.sticker-slot-actions .sticker-clear {
-    white-space: nowrap;
-    font-size: 0.72rem;
-    line-height: 1.2;
-    text-decoration: none;
-}
-.sticker-slot-actions .sticker-pos i,
-.sticker-slot-actions .sticker-clear i { font-size: 0.7rem; }
-.sticker-slot-actions .sticker-pos:hover,
-.sticker-slot-actions .sticker-clear:hover { text-decoration: underline; }
+/* Marks a slot whose sticker has a custom placement (set by the editor). */
 .sticker-slot.positioned .sticker-thumb {
-    outline: 2px solid #4ea1ff;
+    outline: 2px solid var(--lte-accent);
     outline-offset: 1px;
-    border-radius: 6px;
 }
 
-.sticker3d-overlay {
+.sticker2d-overlay {
     display: none;
     position: fixed;
     inset: 0;
@@ -1047,8 +1250,8 @@ li {
     justify-content: center;
     padding: 20px;
 }
-.sticker3d-overlay.show { display: flex; }
-.sticker3d-dialog {
+.sticker2d-overlay.show { display: flex; }
+.sticker2d-dialog {
     width: min(1100px, 96vw);
     height: min(720px, 90vh);
     display: flex;
@@ -1057,27 +1260,65 @@ li {
     overflow: hidden;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
 }
-.sticker3d-header {
+.sticker2d-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
     flex: 0 0 auto;
 }
-.sticker3d-body {
+.sticker2d-body {
     flex: 1 1 auto;
     display: flex;
     min-height: 0;
 }
-.sticker3d-canvas {
+/* The stage centers the canvas; JS sizes the canvas to the largest 16:9 box that
+   fits, so the per-weapon constants (measured in a 1920x1080 frame) line up. */
+.sticker2d-stage {
     flex: 1 1 auto;
     min-width: 0;
-    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: #15171c;
-    touch-action: none; /* let three.js handle pointer drags */
+    overflow: hidden;
+    padding: 8px;
 }
-.sticker3d-canvas canvas { display: block; width: 100%; height: 100%; }
-.sticker3d-side {
+.sticker2d-canvas {
+    position: relative;
+    background: #0f1115;
+    overflow: hidden;
+    touch-action: none;
+}
+.sticker2d-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: fill; /* stretch to the 16:9 frame, as the constants assume */
+    user-select: none;
+    pointer-events: none;
+}
+.sticker2d-item {
+    position: absolute;
+    cursor: grab;
+    touch-action: none;
+    will-change: left, top, transform;
+}
+.sticker2d-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+.sticker2d-item.selected {
+    outline: 2px solid #4ea1ff;
+    outline-offset: 1px;
+    cursor: grabbing;
+}
+.sticker2d-side {
     flex: 0 0 240px;
     display: flex;
     flex-direction: column;
@@ -1086,8 +1327,7 @@ li {
     overflow-y: auto;
 }
 @media (max-width: 768px) {
-    .sticker3d-dialog { height: 92vh; }
-    .sticker3d-body { flex-direction: column; }
-    .sticker3d-canvas { min-height: 280px; }
-    .sticker3d-side { flex-basis: auto; border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+    .sticker2d-dialog { height: 92vh; }
+    .sticker2d-body { flex-direction: column; }
+    .sticker2d-side { flex-basis: auto; border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.08); }
 }

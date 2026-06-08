@@ -1,0 +1,818 @@
+{
+ "ref": {
+  "w": 1920,
+  "h": 1080,
+  "stickerW": 138.66,
+  "stickerH": 104
+ },
+ "weapons": {
+  "1": {
+   "item": "weapon_deagle",
+   "display": "Desert Eagle",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 1,
+   "legacy": {
+    "x": 1007,
+    "y": 354,
+    "scale": 1.475,
+    "pxscale": 0.00103719008
+   },
+   "new": {
+    "x": 975,
+    "y": 334,
+    "scale": 1.825,
+    "pxscale": 0.00103921568
+   }
+  },
+  "2": {
+   "item": "weapon_elite",
+   "display": "Dual Berettas",
+   "order": [
+    3,
+    4,
+    2,
+    1
+   ],
+   "defaultSlot": 0,
+   "legacy": {
+    "x": 960,
+    "y": 430,
+    "scale": 1.3,
+    "pxscale": 0.0013
+   },
+   "new": {
+    "x": 960,
+    "y": 430,
+    "scale": 1.3,
+    "pxscale": 0.0013
+   }
+  },
+  "3": {
+   "item": "weapon_fiveseven",
+   "display": "Five-SeveN",
+   "order": [
+    3,
+    2,
+    1,
+    4
+   ],
+   "defaultSlot": 4,
+   "legacy": {
+    "x": 1022,
+    "y": 391,
+    "scale": 1.52,
+    "pxscale": 0.0013095238
+   },
+   "new": {
+    "x": 1010,
+    "y": 375,
+    "scale": 1.575,
+    "pxscale": 0.00129310344
+   }
+  },
+  "4": {
+   "item": "weapon_glock",
+   "display": "Glock-18",
+   "order": [
+    3,
+    2,
+    1,
+    4
+   ],
+   "defaultSlot": 2,
+   "legacy": {
+    "x": 763,
+    "y": 379,
+    "scale": 1.225,
+    "pxscale": 0.00130434782
+   },
+   "new": {
+    "x": 697,
+    "y": 371,
+    "scale": 1.275,
+    "pxscale": 0.00130434782
+   }
+  },
+  "7": {
+   "item": "weapon_ak47",
+   "display": "AK-47",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 0,
+   "legacy": {
+    "x": 1101,
+    "y": 389,
+    "scale": 0.97,
+    "pxscale": 0.00073553719
+   },
+   "new": {
+    "x": 1090,
+    "y": 392,
+    "scale": 1.007,
+    "pxscale": 0.00074647887
+   }
+  },
+  "8": {
+   "item": "weapon_aug",
+   "display": "AUG",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 0,
+   "legacy": {
+    "x": 1348,
+    "y": 404,
+    "scale": 1.15,
+    "pxscale": 0.00073846153
+   },
+   "new": {
+    "x": 1333,
+    "y": 410,
+    "scale": 1.2,
+    "pxscale": 0.00074022346
+   }
+  },
+  "9": {
+   "item": "weapon_awp",
+   "display": "AWP",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 0,
+   "legacy": {
+    "x": 1403,
+    "y": 545,
+    "scale": 0.69,
+    "pxscale": 0.00070743405
+   },
+   "new": {
+    "x": 1395,
+    "y": 535,
+    "scale": 0.775,
+    "pxscale": 0.00070426829
+   }
+  },
+  "10": {
+   "item": "weapon_famas",
+   "display": "FAMAS",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 3,
+   "legacy": {
+    "x": 777,
+    "y": 438,
+    "scale": 0.95,
+    "pxscale": 0.00073109243
+   },
+   "new": {
+    "x": 764,
+    "y": 437,
+    "scale": 1.04,
+    "pxscale": 0.00072790294
+   }
+  },
+  "11": {
+   "item": "weapon_g3sg1",
+   "display": "G3SG1",
+   "order": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "defaultSlot": 4,
+   "legacy": {
+    "x": 839,
+    "y": 468,
+    "scale": 0.85,
+    "pxscale": 0.00071090047
+   },
+   "new": {
+    "x": 847,
+    "y": 465,
+    "scale": 0.93,
+    "pxscale": 0.00071090047
+   }
+  },
+  "13": {
+   "item": "weapon_galilar",
+   "display": "Galil AR",
+   "order": [
+    3,
+    2,
+    1,
+    4
+   ],
+   "defaultSlot": 2,
+   "legacy": {
+    "x": 742,
+    "y": 400,
+    "scale": 1.14,
+    "pxscale": 0.00074626865
+   },
+   "new": {
+    "x": 681,
+    "y": 397,
+    "scale": 1.2,
+    "pxscale": 0.00073891625
+   }
+  },
+  "14": {
+   "item": "weapon_m249",
+   "display": "M249",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 1,
+   "legacy": {
+    "x": 1118,
+    "y": 472,
+    "scale": 0.8,
+    "pxscale": 0.00073529411
+   },
+   "new": {
+    "x": 1118,
+    "y": 471,
+    "scale": 0.8,
+    "pxscale": 0.00073891625
+   }
+  },
+  "16": {
+   "item": "weapon_m4a1",
+   "display": "M4A4",
+   "order": [
+    3,
+    2,
+    1,
+    4
+   ],
+   "defaultSlot": 2,
+   "legacy": {
+    "x": 845,
+    "y": 489,
+    "scale": 1.03,
+    "pxscale": 0.00073891625
+   },
+   "new": {
+    "x": 832,
+    "y": 486,
+    "scale": 0.98,
+    "pxscale": 0.00074257425
+   }
+  },
+  "17": {
+   "item": "weapon_mac10",
+   "display": "MAC-10",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 3,
+   "legacy": {
+    "x": 762,
+    "y": 305,
+    "scale": 1.15,
+    "pxscale": 0.00135135135
+   },
+   "new": {
+    "x": 745,
+    "y": 283,
+    "scale": 1.425,
+    "pxscale": 0.00135135135
+   }
+  },
+  "19": {
+   "item": "weapon_p90",
+   "display": "P90",
+   "order": [
+    2,
+    4,
+    1,
+    3
+   ],
+   "defaultSlot": 0,
+   "legacy": {
+    "x": 1194,
+    "y": 473,
+    "scale": 1.3,
+    "pxscale": 0.00089820359
+   },
+   "new": {
+    "x": 1200,
+    "y": 467,
+    "scale": 1.45,
+    "pxscale": 0.00090361445
+   }
+  },
+  "23": {
+   "item": "weapon_mp5sd",
+   "display": "MP5-SD",
+   "order": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "defaultSlot": 1,
+   "legacy": {
+    "x": 856,
+    "y": 352,
+    "scale": 1.22,
+    "pxscale": 0.00079787234
+   },
+   "new": {
+    "x": 841,
+    "y": 351,
+    "scale": 1.225,
+    "pxscale": 0.00080213903
+   }
+  },
+  "24": {
+   "item": "weapon_ump45",
+   "display": "UMP-45",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 2,
+   "legacy": {
+    "x": 790,
+    "y": 346,
+    "scale": 1.072,
+    "pxscale": 0.00077720207
+   },
+   "new": {
+    "x": 773,
+    "y": 343,
+    "scale": 1.22,
+    "pxscale": 0.00078534031
+   }
+  },
+  "25": {
+   "item": "weapon_xm1014",
+   "display": "XM1014",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 0,
+   "legacy": {
+    "x": 1039,
+    "y": 441,
+    "scale": 0.89,
+    "pxscale": 0.00075757575
+   },
+   "new": {
+    "x": 1059,
+    "y": 443,
+    "scale": 0.925,
+    "pxscale": 0.00075757575
+   }
+  },
+  "26": {
+   "item": "weapon_bizon",
+   "display": "PP-Bizon",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 0,
+   "legacy": {
+    "x": 966,
+    "y": 414,
+    "scale": 1.08,
+    "pxscale": 0.00072815533
+   },
+   "new": {
+    "x": 976,
+    "y": 409,
+    "scale": 1.2,
+    "pxscale": 0.00072463768
+   }
+  },
+  "27": {
+   "item": "weapon_mag7",
+   "display": "MAG-7",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 2,
+   "legacy": {
+    "x": 1003,
+    "y": 391,
+    "scale": 1.075,
+    "pxscale": 0.00087719298
+   },
+   "new": {
+    "x": 990,
+    "y": 383,
+    "scale": 1.2,
+    "pxscale": 0.00087719298
+   }
+  },
+  "28": {
+   "item": "weapon_negev",
+   "display": "Negev",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 1,
+   "legacy": {
+    "x": 1014,
+    "y": 464,
+    "scale": 0.825,
+    "pxscale": 0.00077319587
+   },
+   "new": {
+    "x": 999,
+    "y": 451,
+    "scale": 0.925,
+    "pxscale": 0.00077720207
+   }
+  },
+  "29": {
+   "item": "weapon_sawedoff",
+   "display": "Sawed-Off",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 2,
+   "legacy": {
+    "x": 964,
+    "y": 443,
+    "scale": 1.07,
+    "pxscale": 0.00085714285
+   },
+   "new": {
+    "x": 938,
+    "y": 440,
+    "scale": 1.2,
+    "pxscale": 0.00085227272
+   }
+  },
+  "30": {
+   "item": "weapon_tec9",
+   "display": "Tec-9",
+   "order": [
+    3,
+    2,
+    1,
+    4
+   ],
+   "defaultSlot": 4,
+   "legacy": {
+    "x": 851,
+    "y": 328,
+    "scale": 1.29,
+    "pxscale": 0.00130434782
+   },
+   "new": {
+    "x": 871,
+    "y": 317,
+    "scale": 1.2,
+    "pxscale": 0.00129310344
+   }
+  },
+  "31": {
+   "item": "weapon_taser",
+   "display": "Zeus x27",
+   "order": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "defaultSlot": 2,
+   "legacy": {
+    "x": 861,
+    "y": 314,
+    "scale": 1.65,
+    "pxscale": 0.0012886597938144
+   },
+   "new": {
+    "x": 861,
+    "y": 314,
+    "scale": 1.65,
+    "pxscale": 0.0012886597938144
+   }
+  },
+  "32": {
+   "item": "weapon_hkp2000",
+   "display": "P2000",
+   "order": [
+    3,
+    2,
+    1,
+    4
+   ],
+   "defaultSlot": 4,
+   "legacy": {
+    "x": 989,
+    "y": 376,
+    "scale": 1.42,
+    "pxscale": 0.00129310344
+   },
+   "new": {
+    "x": 962,
+    "y": 364,
+    "scale": 1.59,
+    "pxscale": 0.00130434782
+   }
+  },
+  "33": {
+   "item": "weapon_mp7",
+   "display": "MP7",
+   "order": [
+    2,
+    3,
+    1,
+    4
+   ],
+   "defaultSlot": 1,
+   "legacy": {
+    "x": 978,
+    "y": 348,
+    "scale": 1.27,
+    "pxscale": 0.001171875
+   },
+   "new": {
+    "x": 948,
+    "y": 355,
+    "scale": 1.45,
+    "pxscale": 0.00118110236
+   }
+  },
+  "34": {
+   "item": "weapon_mp9",
+   "display": "MP9",
+   "order": [
+    3,
+    2,
+    4,
+    1
+   ],
+   "defaultSlot": 1,
+   "legacy": {
+    "x": 861,
+    "y": 382,
+    "scale": 1.3,
+    "pxscale": 0.00082872928
+   },
+   "new": {
+    "x": 869,
+    "y": 366,
+    "scale": 1.3,
+    "pxscale": 0.00082417582
+   }
+  },
+  "35": {
+   "item": "weapon_nova",
+   "display": "Nova",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 3,
+   "legacy": {
+    "x": 874,
+    "y": 438,
+    "scale": 0.81,
+    "pxscale": 0.00076142131
+   },
+   "new": {
+    "x": 881,
+    "y": 436,
+    "scale": 0.81,
+    "pxscale": 0.00076142131
+   }
+  },
+  "36": {
+   "item": "weapon_p250",
+   "display": "P250",
+   "order": [
+    3,
+    2,
+    1,
+    4
+   ],
+   "defaultSlot": 4,
+   "legacy": {
+    "x": 1014,
+    "y": 372,
+    "scale": 1.48,
+    "pxscale": 0.00129310344
+   },
+   "new": {
+    "x": 1013,
+    "y": 366,
+    "scale": 1.46,
+    "pxscale": 0.00129310344
+   }
+  },
+  "38": {
+   "item": "weapon_scar20",
+   "display": "SCAR-20",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 2,
+   "legacy": {
+    "x": 1009,
+    "y": 535,
+    "scale": 0.81,
+    "pxscale": 0.00072463768
+   },
+   "new": {
+    "x": 990,
+    "y": 530,
+    "scale": 0.9,
+    "pxscale": 0.00072115384
+   }
+  },
+  "39": {
+   "item": "weapon_sg556",
+   "display": "SG 553",
+   "order": [
+    3,
+    4,
+    2,
+    1
+   ],
+   "defaultSlot": 2,
+   "legacy": {
+    "x": 979,
+    "y": 424,
+    "scale": 0.91,
+    "pxscale": 0.00076923076
+   },
+   "new": {
+    "x": 955,
+    "y": 411,
+    "scale": 1.03,
+    "pxscale": 0.00076530612
+   }
+  },
+  "40": {
+   "item": "weapon_ssg08",
+   "display": "SSG 08",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 2,
+   "legacy": {
+    "x": 920,
+    "y": 512,
+    "scale": 0.71,
+    "pxscale": 0.00057692307
+   },
+   "new": {
+    "x": 948,
+    "y": 505,
+    "scale": 0.8,
+    "pxscale": 0.00058139534
+   }
+  },
+  "60": {
+   "item": "weapon_m4a1_silencer",
+   "display": "M4A1-S",
+   "order": [
+    4,
+    2,
+    3,
+    1
+   ],
+   "defaultSlot": 1,
+   "legacy": {
+    "x": 1010,
+    "y": 504,
+    "scale": 0.75,
+    "pxscale": 0.00072815533
+   },
+   "new": {
+    "x": 1005,
+    "y": 494,
+    "scale": 0.775,
+    "pxscale": 0.00072815533
+   }
+  },
+  "61": {
+   "item": "weapon_usp_silencer",
+   "display": "USP-S",
+   "order": [
+    4,
+    3,
+    2,
+    1
+   ],
+   "defaultSlot": 3,
+   "legacy": {
+    "x": 973,
+    "y": 387,
+    "scale": 1.05,
+    "pxscale": 0.0009868421
+   },
+   "new": {
+    "x": 999,
+    "y": 387,
+    "scale": 0.95,
+    "pxscale": 0.00106382978
+   }
+  },
+  "63": {
+   "item": "weapon_cz75a",
+   "display": "CZ75-Auto",
+   "order": [
+    1,
+    2,
+    3,
+    4
+   ],
+   "defaultSlot": 0,
+   "legacy": {
+    "x": 786,
+    "y": 307,
+    "scale": 1.525,
+    "pxscale": 0.00113669064
+   },
+   "new": {
+    "x": 771,
+    "y": 307,
+    "scale": 1.55,
+    "pxscale": 0.00112587412
+   }
+  },
+  "64": {
+   "item": "weapon_revolver",
+   "display": "R8 Revolver",
+   "order": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "defaultSlot": 1,
+   "legacy": {
+    "x": 740,
+    "y": 348,
+    "scale": 1.16,
+    "pxscale": 0.00113636363
+   },
+   "new": {
+    "x": 738,
+    "y": 346,
+    "scale": 1.2,
+    "pxscale": 0.00112781954
+   }
+  }
+ }
+}

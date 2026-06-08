@@ -160,9 +160,9 @@ const weaponIds = {
 //   "id;schema;x;y;wear;scale;rotation"  -> wear is index 4.
 // We only expose `wear`; everything else stays at the default position (0).
 const STICKER_EMPTY = '0;0;0;0;0;0;0'
-// CS2 supports 5 stickers (slots 0-4). With free placement the 5th renders
-// fine once it has a position, so the UI exposes all five.
-const STICKER_SLOTS = 5
+// The UI exposes 4 sticker slots. CS2 has a 5th slot (index 4) but the website
+// only offers four; the server still clears the 5th column on save.
+const STICKER_SLOTS = 4
 
 let stickersData = null            // [{id, name, image, rarity, rarityName, effect, type}]
 let stickersById = null            // { id: sticker }
@@ -170,7 +170,7 @@ let stickerSlots = new Array(STICKER_SLOTS).fill(0) // selected sticker id per s
 // Per-slot placement: offset x/y on the weapon, scale and rotation. The "untouched"
 // default is all-zero, which serialises to the exact same string the site used
 // before positioning existed (id;0;0;0;wear;0;0), so saved items don't change
-// unless the user actually moves a sticker in the 3D editor.
+// unless the user actually moves a sticker in the placement editor.
 const defaultStickerTransform = () => ({ x: 0, y: 0, scale: 0, rotation: 0 })
 let stickerTransforms = Array.from({ length: STICKER_SLOTS }, defaultStickerTransform)
 let activeStickerSlot = 0
@@ -258,9 +258,11 @@ const renderStickerSlot = (slot, id, wear, transform) => {
         }
         img.style.display = sticker ? 'block' : 'none'
         plus.style.display = sticker ? 'none' : 'block'
-        clearBtn.style.display = 'inline-block'
+        clearBtn.style.display = 'flex'
         if (applyAllBtn) applyAllBtn.style.display = 'flex'
-        if (posBtn) posBtn.style.display = 'inline-block'
+        // Per-sticker placement editor is hidden in the UI for now (the button and
+        // editor code stay in place; just don't surface it). Keep it 'none'.
+        if (posBtn) posBtn.style.display = 'none'
         wearWrap.style.display = 'block'
         const w = Number.isFinite(wear) ? wear : 0
         wearInput.value = w
@@ -459,7 +461,7 @@ window.clearSticker = clearSticker
 window.clearAllSlots = clearAllSlots
 window.applyStickerToAll = applyStickerToAll
 
-// API consumed by the 3D placement editor (sticker3d.js, an ES module).
+// API consumed by the 2D placement editor (sticker2d.js, an ES module).
 window.stickerEditorAPI = {
     slotCount: STICKER_SLOTS,
     getSlotStickerId: (slot) => stickerSlots[slot] || 0,
@@ -478,6 +480,14 @@ const editModal = (img, weaponName, paintName, weaponId, paintId, stattrakAvaila
     document.getElementById('modalPaint').innerText = paintName
     currentWeaponId = weaponIds[weaponId]
     currentPaintId = paintId
+
+    // Stickers only apply to guns, not knives or gloves. Hide the whole sticker
+    // section for those so it isn't offered where it can't be used.
+    const stickerSection = document.getElementById('stickerSection')
+    if (stickerSection) {
+        const supportsStickers = !/knife|bayonet|glove|handwrap/i.test(String(weaponId))
+        stickerSection.style.display = supportsStickers ? '' : 'none'
+    }
 
     // The saved row (if any) for this exact weapon+paint drives both the StatTrak
     // state and the saved stickers.
