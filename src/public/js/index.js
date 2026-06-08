@@ -199,7 +199,8 @@ const ensureStickersLoaded = () => {
 const buildStickerString = (slot) => {
     const id = stickerSlots[slot]
     if (!id || id <= 0) return STICKER_EMPTY
-    let wear = parseFloat(document.getElementById(`stickerWear-${slot}`).value)
+    const wearEl = document.getElementById(`stickerWear-${slot}`)
+    let wear = wearEl ? parseFloat(wearEl.value) : 0
     if (!Number.isFinite(wear)) wear = 0
     wear = Math.min(1, Math.max(0, wear))
     const t = stickerTransforms[slot] || defaultStickerTransform()
@@ -528,6 +529,8 @@ const changeParams = () => {
     for (let i = 0; i < STICKER_SLOTS; i++) {
         stickers.push(buildStickerString(i))
     }
+    // Diagnostic: shows exactly what the Change button sends (remove later).
+    console.log('[change-params] sending', { weaponid, paintid, stickers })
 
     document.getElementById('modalButton').innerHTML =
         `
