@@ -85,5 +85,6 @@
     "positionRetap":"tap to re-place",
     "positionClickSelect":"Click a sticker to select it. Right-drag moves it, scroll rotates.",
     "positionSelected":"Selected",
-    "clearAll":"Clear all stickers"
+    "clearAll":"Clear all stickers",
+    "defaultSlots":"Default slot positions"
 }

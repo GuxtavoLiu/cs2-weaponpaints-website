@@ -459,6 +459,20 @@ function saveStickerEditor() {
     closeStickerEditor()
 }
 
+// Approximate canvas positions of CS2's 4 standard sticker spots (front->back
+// along the weapon). A quick way to snap a sticker to a canonical place.
+const SLOT_PRESETS = [{ u: 0.30, v: 0.62 }, { u: 0.45, v: 0.62 }, { u: 0.58, v: 0.62 }, { u: 0.71, v: 0.62 }]
+function placeSelectedAtSlot(n) {
+    const it = sel()
+    if (!it) return
+    const p = SLOT_PRESETS[n]
+    if (!p) return
+    const sp = pointFromCanvas(p.u, p.v)
+    if (sp) { it.pos = sp.point; it.normal = sp.normal; it.object = sp.object; it.uv = { u: p.u, v: p.v } }
+    it.dirty = true
+    buildItemDecal(it); rebuildOutline(); updateStatus()
+}
+
 function clearAllStickers() {
     const api = API()
     if (api && api.clearSlot) {
@@ -487,3 +501,4 @@ window.closeStickerEditor = closeStickerEditor
 window.resetStickerEditor = resetStickerEditor
 window.saveStickerEditor = saveStickerEditor
 window.clearAllStickers = clearAllStickers
+window.placeSelectedAtSlot = placeSelectedAtSlot

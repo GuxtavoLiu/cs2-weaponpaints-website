@@ -82,5 +82,6 @@
     "positionRetap":"toque para reposicionar",
     "positionClickSelect":"Clique num sticker para selecionar. Botão direito move, scroll rotaciona.",
     "positionSelected":"Selecionado",
-    "clearAll":"Limpar todos os stickers"
+    "clearAll":"Limpar todos os stickers",
+    "defaultSlots":"Posições padrão dos slots"
 }
