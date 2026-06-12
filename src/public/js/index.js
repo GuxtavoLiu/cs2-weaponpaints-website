@@ -687,11 +687,9 @@ const editModal = (img, weaponName, paintName, weaponId, paintId, stattrakAvaila
     }
 
     // The saved row (if any) for this exact weapon+paint drives both the StatTrak
-    // state and the saved stickers.
-    let savedRow = undefined
-    if (typeof selectedSkins !== 'undefined') {
-        savedRow = selectedSkins.find(s => s.weapon_defindex == currentWeaponId && s.weapon_paint_id == currentPaintId)
-    }
+    // state and the saved stickers. Team-exact in T/CT mode; in 'both' mode the
+    // CT row seeds the display and saving writes both teams identical.
+    const savedRow = window.skinRowFor(currentWeaponId, currentPaintId)
 
     // StatTrak only applies to items that support it (e.g. not gloves / low-tier
     // skins). Hide the switch otherwise. When supported, default it ON for a
@@ -744,7 +742,7 @@ const changeParams = () => {
             </div>
         `
 
-    socket.emit('change-params', {steamid: steamid, weaponid: weaponid, paintid: paintid, float: float, pattern: pattern, stattrak: stattrak, stickers: stickers})
+    socket.emit('change-params', {steamid: steamid, weaponid: weaponid, paintid: paintid, float: float, pattern: pattern, stattrak: stattrak, stickers: stickers, team: writeTeamForWeapon(getKeyByValue(weaponIds, weaponid))})
 }
 
 const putOnWorkshop = (setId, selected_knife_id, selected_knife, selected_gloves) => {
@@ -803,7 +801,7 @@ const applyInspectLink = () => {
     status.innerText = '...'
     document.getElementById('inspectButton').innerHTML =
         `<div class="spinner-border spinner-border-sm" role="status"><span class="visually-hidden">Loading...</span></div>`
-    socket.emit('apply-inspect', { steamid: user.id, link: link })
+    socket.emit('apply-inspect', { steamid: user.id, link: link, team: getWriteTeam() })
     // Safety net: if the server never answers (e.g. it's running an old build
     // without this handler), stop spinning and surface an error.
     clearTimeout(inspectTimer)

@@ -46,6 +46,7 @@ export let musicObject = await getCachedOrFetch(
 const sideBtnHandler = (activeBtn) => {
   // remove active background
   let allBtns = [
+    "sideBtnLoadout",
     "sideBtnKnives",
     "sideBtnGloves",
     "sideBtnMusics",
@@ -78,6 +79,8 @@ const sideBtnHandler = (activeBtn) => {
 
   for (var i = 0; i < elms.length; i++) elms[i].classList.add("active-side");
 };
+// showLoadout lives in templates.js but highlights its side button too.
+window.sideBtnHandler = sideBtnHandler;
 
 const showDefaults = (type, toolbarOpts) => {
   // clear main container
@@ -86,12 +89,7 @@ const showDefaults = (type, toolbarOpts) => {
   if (type == "sfui_invpanel_filter_melee") {
     defaultsObject.forEach((knife) => {
       if (knife.weapon_type == "sfui_invpanel_filter_melee") {
-        const skinWeapon = selectedSkins.find((element) => {
-          if (element.weapon_defindex == weaponIds[knife.weapon_name]) {
-            return true;
-          }
-          return false;
-        });
+        const skinWeapon = window.skinRowFor(weaponIds[knife.weapon_name]);
 
         if (typeof skinWeapon != "undefined") {
           changeKnifeSkinTemplate(knife, langObject, selectedKnife);
@@ -104,12 +102,7 @@ const showDefaults = (type, toolbarOpts) => {
   } else if (type == "sfui_invpanel_filter_gloves") {
     defaultsObject.forEach((glove) => {
       if (glove.weapon_type == "sfui_invpanel_filter_gloves") {
-        const skinWeapon = selectedSkins.find((element) => {
-          if (element.weapon_defindex == weaponIds[glove.weapon_name]) {
-            return true;
-          }
-          return false;
-        });
+        const skinWeapon = window.skinRowFor(weaponIds[glove.weapon_name]);
 
         if (typeof skinWeapon != "undefined") {
           changeGlovesSkinTemplate(glove, langObject, selectedGloves);
@@ -122,12 +115,7 @@ const showDefaults = (type, toolbarOpts) => {
   } else {
     defaultsObject.forEach((weapon) => {
       if (weapon.weapon_type == type) {
-        const skinWeapon = selectedSkins.find((element) => {
-          if (element.weapon_defindex == weaponIds[weapon.weapon_name]) {
-            return true;
-          }
-          return false;
-        });
+        const skinWeapon = window.skinRowFor(weaponIds[weapon.weapon_name]);
 
         if (typeof skinWeapon != "undefined") {
           changeSkinTemplate(weapon, langObject, selectedKnife);
@@ -141,12 +129,16 @@ const showDefaults = (type, toolbarOpts) => {
   window.mountSkinsToolbar(toolbarOpts);
 };
 
+// Each view registers itself in window.currentViewRender so the global team
+// selector (teamState.js) can re-render whatever is open when the team changes.
 const showKnives = () => {
+  window.currentViewRender = showKnives;
   sideBtnHandler("sideBtnKnives");
   showDefaults("sfui_invpanel_filter_melee");
 };
 
 const showGloves = () => {
+  window.currentViewRender = showGloves;
   sideBtnHandler("sideBtnGloves");
   showDefaults("sfui_invpanel_filter_gloves", {
     toggle: {
@@ -158,51 +150,63 @@ const showGloves = () => {
 };
 
 const showMusics = () => {
+  window.currentViewRender = showMusics;
   sideBtnHandler("sideBtnMusics");
   //showMusic();
 };
 
 const showPistols = () => {
+  window.currentViewRender = showPistols;
   sideBtnHandler("sideBtnPistols");
   showDefaults("csgo_inventory_weapon_category_pistols");
 };
 
 const showRifles = () => {
+  window.currentViewRender = showRifles;
   sideBtnHandler("sideBtnRifles");
   showDefaults("csgo_inventory_weapon_category_rifles");
 };
 
 const showSniperRifles = () => {
+  window.currentViewRender = showSniperRifles;
   sideBtnHandler("sideBtnSniperRifles");
   showDefaults("csgo_inventory_weapon_category_rifles");
 };
 
 const showPPs = () => {
+  window.currentViewRender = showPPs;
   sideBtnHandler("sideBtnPPs");
   showDefaults("csgo_inventory_weapon_category_smgs");
 };
 
 const showShotguns = () => {
+  window.currentViewRender = showShotguns;
   sideBtnHandler("sideBtnShotguns");
   showDefaults("csgo_inventory_weapon_category_heavy");
 };
 
 const showP = () => {
+  window.currentViewRender = showP;
   sideBtnHandler("sideBtnP");
   showDefaults("csgo_inventory_weapon_category_heavy");
 };
 
 const showUtility = () => {
+  window.currentViewRender = showUtility;
   sideBtnHandler("sideBtnUtility");
   showDefaults("csgo_inventory_weapon_category_utility");
 };
 
+// Agent views ignore the team selector by design (they have their own CT/T
+// side buttons); re-rendering them on team change is just a harmless refresh.
 const showCTAgents = () => {
+  window.currentViewRender = showCTAgents;
   sideBtnHandler("sideBtnCTAgents");
   showAgents("ct");
 };
 
 const showTAgents = () => {
+  window.currentViewRender = showTAgents;
   sideBtnHandler("sideBtnTAgents");
   showAgents("t");
 };
@@ -270,7 +274,11 @@ sideBtns.forEach((btn) => {
 });
 
 window.changeKnife = (weaponid) => {
-  socket.emit("change-knife", { weaponid: weaponid, steamUserId: user.id });
+  socket.emit("change-knife", {
+    weaponid: weaponid,
+    steamUserId: user.id,
+    team: getWriteTeam(),
+  });
   document.getElementById(`loading-${weaponid}`).style.visibility = "visible";
   document.getElementById(`loading-${weaponid}`).style.opacity = 1;
 };
@@ -279,6 +287,7 @@ window.changeGlove = (weaponid) => {
   socket.emit("change-glove", {
     weaponid: weaponIds[weaponid],
     steamUserId: user.id,
+    team: getWriteTeam(),
   });
   document.getElementById(`loading-${weaponid}`).style.visibility = "visible";
   document.getElementById(`loading-${weaponid}`).style.opacity = 1;
@@ -289,6 +298,7 @@ window.changeSkin = (steamid, weaponid, paintid) => {
     steamid: steamid,
     weaponid: weaponid,
     paintid: paintid,
+    team: writeTeamForWeapon(getKeyByValue(weaponIds, weaponid)),
   });
   document.getElementById(`loading-${weaponid}-${paintid}`).style.visibility =
     "visible";
@@ -304,14 +314,18 @@ window.changeAgent = (steamid, model, team) => {
 
 window.changeMusic = (steamid, id) => {
   console.log(steamid, id);
-  socket.emit("change-music", { steamid: steamid, id: id });
+  socket.emit("change-music", { steamid: steamid, id: id, team: getWriteTeam() });
   document.getElementById(`loading-${id}`).style.visibility = "visible";
   document.getElementById(`loading-${id}`).style.opacity = 1;
 };
 
 window.resetSkin = (weaponid, steamid) => {
   console.log(steamid, weaponid);
-  socket.emit("reset-skin", { steamid: user.id, weaponid: weaponid });
+  socket.emit("reset-skin", {
+    steamid: user.id,
+    weaponid: weaponid,
+    team: writeTeamForWeapon(getKeyByValue(weaponIds, weaponid)),
+  });
 };
 
 socket.on("skin-reset", (data) => {
@@ -328,15 +342,16 @@ socket.on("skin-reset", (data) => {
     `skinPaintName-${weapon_name}`
   ).innerHTML = `<small>${langObject.defaultSkin}</small>`;
 
-  let tempSkins = [];
-
-  selectedSkins.forEach((element) => {
-    if (element.weapon_defindex != data.weaponid) {
-      tempSkins.push(element);
-    }
-  });
-
-  selectedSkins = tempSkins;
+  // The server returns the fresh rows: the reset may have deleted only one
+  // team's row, so a local "drop every row with this defindex" would also
+  // discard the surviving team's skin. Legacy fallback for old payloads.
+  if (Array.isArray(data.newSkins)) {
+    selectedSkins = data.newSkins;
+  } else {
+    selectedSkins = selectedSkins.filter(
+      (element) => element.weapon_defindex != data.weaponid
+    );
+  }
 });
 
 socket.on("knife-changed", (data) => {
@@ -353,7 +368,18 @@ socket.on("knife-changed", (data) => {
     };
   }
 
-  selectedKnife.knife = data.knife;
+  (data.teams || [2, 3]).forEach((t) => {
+    loadoutByTeam.knife[t] = {
+      ...(loadoutByTeam.knife[t] || {}),
+      steamid: user.id,
+      weapon_team: t,
+      knife: data.knife,
+    };
+  });
+  syncDerivedSelection();
+  // Divergence badges only render in 'both' mode, and a 'both' equip leaves no
+  // diverging knife behind, so clearing them all is exact.
+  document.querySelectorAll("#skinsContainer .team-badge").forEach((b) => b.remove());
 
   document.getElementById(data.knife).classList.add("active-card");
   const button = document.getElementById(data.knife).querySelectorAll("button");
@@ -383,7 +409,16 @@ socket.on("glove-changed", (data) => {
 
   const gloves = getKeyByValue(weaponIds, data.knife);
 
-  selectedGloves.weapon_defindex = data.knife;
+  (data.teams || [2, 3]).forEach((t) => {
+    loadoutByTeam.gloves[t] = {
+      ...(loadoutByTeam.gloves[t] || {}),
+      steamid: user.id,
+      weapon_team: t,
+      weapon_defindex: data.knife,
+    };
+  });
+  syncDerivedSelection();
+  document.querySelectorAll("#skinsContainer .team-badge").forEach((b) => b.remove());
 
   document.getElementById(gloves).classList.add("active-card");
   const button = document.getElementById(gloves).querySelectorAll("button");
@@ -405,6 +440,12 @@ socket.on("skin-changed", (data) => {
   }
 
   selectedSkins = data.newSkins;
+
+  // In 'both' mode the equip covered both teams, so this weapon can't have a
+  // diverging paint anymore; drop its badges (other weapons keep theirs).
+  document
+    .querySelectorAll(`[id^="weapon-${data.weaponid}-"] .team-badge`)
+    .forEach((b) => b.remove());
 
   document
     .getElementById(`weapon-${data.weaponid}-${data.paintid}`)
@@ -441,7 +482,17 @@ socket.on("music-changed", (data) => {
     elms[i].classList.remove("active-card");
   }
 
-  selectedMusic.music_id = data.music;
+  (data.teams || [2, 3]).forEach((t) => {
+    loadoutByTeam.music[t] = {
+      ...(loadoutByTeam.music[t] || {}),
+      steamid: user.id,
+      weapon_team: t,
+      music_id: data.music,
+    };
+  });
+  syncDerivedSelection();
+  document.querySelectorAll("#skinsContainer .team-badge").forEach((b) => b.remove());
+
   document
     .getElementById(`music-${data.music}`)
     .classList.add("active-card");
@@ -463,6 +514,7 @@ const CATEGORY_SHOW_FN = {
 };
 
 window.knifeSkins = (knifeType) => {
+  window.currentViewRender = () => knifeSkins(knifeType);
   // clear main container
   document.getElementById("skinsContainer").innerHTML = "";
 
@@ -476,7 +528,12 @@ window.knifeSkins = (knifeType) => {
         .appendChild(buildSkinCard(element));
     }
   });
-  window.mountSkinsToolbar(backTo ? { back: backTo } : undefined);
+  // A team-exclusive gun ignores the team selector (equips always target its
+  // own side), so the toolbar hides it on this grid.
+  window.mountSkinsToolbar({
+    ...(backTo ? { back: backTo } : {}),
+    noTeam: window.weaponTeams(knifeType).length === 1,
+  });
 };
 
 // Builds one skin card. Shared by the per-type view (knifeSkins) and the
@@ -510,22 +567,22 @@ const buildSkinCard = (element) => {
     phase = `(${element.phase})`;
   }
 
-  // Make outline if this skin is selected
-  selectedSkins.forEach((el) => {
-    if (
-      el.weapon_paint_id == element.paint_index &&
-      (el.weapon_defindex == weaponIds[element.weapon.id] ||
-        el.model_idx == weaponIds[element.weapon.id])
-    ) {
-      active = "active-card";
-    }
-  });
+  // Outline when equipped for the current team selection ('both': active only
+  // when both teams have it; a T/CT corner badge when only one does).
+  const st = window.skinTeamState(
+    weaponIds[element.weapon.id],
+    element.paint_index,
+    element.weapon.id
+  );
+  if (st.active) active = "active-card";
+  const badge = window.teamBadgeHtml(st);
 
   let card = document.createElement("div");
   card.classList.add("col-6", "col-sm-4", "col-md-3", "p-2");
 
   card.innerHTML = `
                 <div onclick="changeSkin(\'${user.id}\', \'${weaponIds[element.weapon.id]}\', ${element.paint_index})" id="weapon-${weaponIds[element.weapon.id]}-${element.paint_index}" class="weapon-card rounded-3 d-flex flex-column ${active} ${bgColor} contrast-reset pb-2" data-type="skinCard" data-btn-type="${weaponIds[element.weapon.id]}-${element.paint_index}">
+                    ${badge}
                     <div style="z-index: 3;" class="locked-card d-flex flex-column justify-content-center align-items-center w-100 h-100" id="locked-${weaponIds[element.weapon.id]}-${element.paint_index}">
                         <i class="fa-solid fa-lock"></i>
                         <p class="m-0">Buy Premium</p>
@@ -565,6 +622,7 @@ const buildSkinCard = (element) => {
 // "Show all" gloves: every glove skin from every glove type in a single grid,
 // ordered by glove type then skin name. Toggled from the gloves toolbar.
 window.showAllGloves = () => {
+  window.currentViewRender = window.showAllGloves;
   sideBtnHandler("sideBtnGloves");
   document.getElementById("skinsContainer").innerHTML = "";
 

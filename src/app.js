@@ -22,6 +22,17 @@ const KNIFE_DEFINDEX_TO_NAME = {
 };
 const GLOVE_DEFINDEX_MIN = 4725;
 
+// Whitelist the client-supplied team selector. 2=T, 3=CT; anything else
+// (including 'both', missing or garbage) means "write both teams", which is
+// the pre-selector behavior. Team values only ever come from this function and
+// are bound via placeholders, never interpolated into SQL text.
+const teamsFrom = (t) => {
+  const n = Number(t);
+  if (n === 2) return [2];
+  if (n === 3) return [3];
+  return [2, 3];
+};
+
 // load configuration files
 const config = require("./config.json");
 config.SUBDIR = "/";
@@ -156,15 +167,17 @@ app.get(config.SUBDIR, (req, res) => {
                           results3 = results3 !=undefined ? results3 : [];
                           results4 = results4 !=undefined ? results4 : [];
                           results5 = results5 !=undefined ? results5 : [];
+                          // knife/musics/gloves: full row arrays (one row per
+                          // weapon_team) so the client can keep per-team state.
                           res.render("index", {
                             config: config,
                             session: req.session,
                             user: req.user,
-                            knife: results[0],
+                            knife: results,
                             skins: results2,
                             agents: results3[0],
-                            musics: results4[0],
-                            gloves: results5[0],
+                            musics: results4,
+                            gloves: results5,
                             lang: langs[pickLangCode(req)],
                             langCode: pickLangCode(req),
                             availableLangs: availableLangs,
@@ -297,49 +310,53 @@ io.on("connection", (socket) => {
 
   socket.on("change-knife", (data) => {
     dbg("change-knife recv", data);
-    // weapon_team in PK -> write both teams (2/3) via upsert.
+    // weapon_team in PK -> upsert one row per selected team.
+    const teams = teamsFrom(data.team);
     connection.query(
-      "INSERT INTO wp_player_knife (steamid, weapon_team, knife) VALUES (?, 2, ?), (?, 3, ?) ON DUPLICATE KEY UPDATE knife = VALUES(knife)",
-      [data.steamUserId, data.weaponid, data.steamUserId, data.weaponid],
+      `INSERT INTO wp_player_knife (steamid, weapon_team, knife) VALUES ${teams.map(() => "(?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE knife = VALUES(knife)`,
+      teams.flatMap((t) => [data.steamUserId, t, data.weaponid]),
       (err, results, fields) => {
         if (err) dbg("change-knife SQL ERROR", err.message);
-        socket.emit("knife-changed", { knife: data.weaponid });
+        socket.emit("knife-changed", { knife: data.weaponid, teams });
       }
     );
   });
 
   socket.on("change-glove", (data) => {
     dbg("change-glove recv", data);
+    const teams = teamsFrom(data.team);
     connection.query(
-      "INSERT INTO wp_player_gloves (steamid, weapon_team, weapon_defindex) VALUES (?, 2, ?), (?, 3, ?) ON DUPLICATE KEY UPDATE weapon_defindex = VALUES(weapon_defindex)",
-      [data.steamUserId, data.weaponid, data.steamUserId, data.weaponid],
+      `INSERT INTO wp_player_gloves (steamid, weapon_team, weapon_defindex) VALUES ${teams.map(() => "(?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE weapon_defindex = VALUES(weapon_defindex)`,
+      teams.flatMap((t) => [data.steamUserId, t, data.weaponid]),
       (err, results, fields) => {
         if (err) dbg("change-glove SQL ERROR", err.message);
-        socket.emit("glove-changed", { knife: data.weaponid });
+        socket.emit("glove-changed", { knife: data.weaponid, teams });
       }
     );
   });
 
   socket.on("change-music", (data) => {
     dbg("change-music recv", data);
+    const teams = teamsFrom(data.team);
     connection.query(
-      "INSERT INTO wp_player_music (steamid, weapon_team, music_id) VALUES (?, 2, ?), (?, 3, ?) ON DUPLICATE KEY UPDATE music_id = VALUES(music_id)",
-      [data.steamid, data.id, data.steamid, data.id],
+      `INSERT INTO wp_player_music (steamid, weapon_team, music_id) VALUES ${teams.map(() => "(?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE music_id = VALUES(music_id)`,
+      teams.flatMap((t) => [data.steamid, t, data.id]),
       (err, results, fields) => {
         if (err) dbg("change-music SQL ERROR", err.message);
-        socket.emit("music-changed", { music: data.id });
+        socket.emit("music-changed", { music: data.id, teams });
       }
     );
   });
 
   socket.on("change-skin", (data) => {
     dbg("change-skin recv", data);
-    // weapon_team is part of the composite PK and has no default; write rows for
-    // both teams (2=T, 3=CT) so the skin applies regardless of side. Upsert keeps
-    // it idempotent when the weapon already has a row.
+    // weapon_team is part of the composite PK and has no default; write one row
+    // per selected team (2=T, 3=CT). Upsert keeps it idempotent when the weapon
+    // already has a row.
+    const teams = teamsFrom(data.team);
     connection.query(
-      "INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id) VALUES (?, 2, ?, ?), (?, 3, ?, ?) ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id)",
-      [data.steamid, data.weaponid, data.paintid, data.steamid, data.weaponid, data.paintid],
+      `INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id) VALUES ${teams.map(() => "(?, ?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id)`,
+      teams.flatMap((t) => [data.steamid, t, data.weaponid, data.paintid]),
       (err, results, fields) => {
         if (err) dbg("change-skin SQL ERROR", err.message);
         else dbg("change-skin SQL ok affectedRows=", results.affectedRows);
@@ -350,6 +367,7 @@ io.on("connection", (socket) => {
             socket.emit("skin-changed", {
               weaponid: data.weaponid,
               paintid: data.paintid,
+              teams,
               newSkins: results2,
             });
           }
@@ -439,13 +457,14 @@ io.on("connection", (socket) => {
     const stickersIn = Array.isArray(data.stickers) ? data.stickers : [];
     const stk = [0, 1, 2, 3, 4].map((i) => sanitizeSticker(stickersIn[i]));
     // The modal carries weapon_defindex + paint_id, so a single click can fully
-    // create the skin row (paint + wear + seed + stattrak + stickers) for both
-    // teams, not just update a pre-existing one. weapon_team is in the PK, so it
-    // must be supplied.
+    // create the skin row (paint + wear + seed + stattrak + stickers) for the
+    // selected team(s), not just update a pre-existing one. weapon_team is in
+    // the PK, so it must be supplied.
+    const teams = teamsFrom(data.team);
     const rowValues = (team) => [data.steamid, team, data.weaponid, data.paintid, safeWear, seed, stattrak, ...stk];
     connection.query(
-      "INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id, weapon_wear, weapon_seed, weapon_stattrak, weapon_sticker_0, weapon_sticker_1, weapon_sticker_2, weapon_sticker_3, weapon_sticker_4) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id), weapon_wear = VALUES(weapon_wear), weapon_seed = VALUES(weapon_seed), weapon_stattrak = VALUES(weapon_stattrak), weapon_sticker_0 = VALUES(weapon_sticker_0), weapon_sticker_1 = VALUES(weapon_sticker_1), weapon_sticker_2 = VALUES(weapon_sticker_2), weapon_sticker_3 = VALUES(weapon_sticker_3), weapon_sticker_4 = VALUES(weapon_sticker_4)",
-      [...rowValues(2), ...rowValues(3)],
+      `INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id, weapon_wear, weapon_seed, weapon_stattrak, weapon_sticker_0, weapon_sticker_1, weapon_sticker_2, weapon_sticker_3, weapon_sticker_4) VALUES ${teams.map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id), weapon_wear = VALUES(weapon_wear), weapon_seed = VALUES(weapon_seed), weapon_stattrak = VALUES(weapon_stattrak), weapon_sticker_0 = VALUES(weapon_sticker_0), weapon_sticker_1 = VALUES(weapon_sticker_1), weapon_sticker_2 = VALUES(weapon_sticker_2), weapon_sticker_3 = VALUES(weapon_sticker_3), weapon_sticker_4 = VALUES(weapon_sticker_4)`,
+      teams.flatMap(rowValues),
       (err, results, fields) => {
         if (err) dbg("change-params SQL ERROR", err.message);
         else dbg("change-params SQL ok affectedRows=", results.affectedRows);
@@ -455,7 +474,7 @@ io.on("connection", (socket) => {
           "SELECT * FROM wp_player_skins WHERE steamid = ?",
           [data.steamid],
           (err2, results2, fields2) => {
-            socket.emit("params-changed", { newSkins: results2 || [] });
+            socket.emit("params-changed", { newSkins: results2 || [], teams });
           }
         );
       }
@@ -463,11 +482,21 @@ io.on("connection", (socket) => {
   });
 
   socket.on("reset-skin", (data) => {
+    // Delete only the selected team's row(s) and return the fresh rows: the
+    // other team may keep its skin, so the client can't just drop every row
+    // with this defindex locally.
+    const teams = teamsFrom(data.team);
     connection.query(
-      "DELETE FROM wp_player_skins WHERE steamid = ? AND weapon_defindex = ?",
-      [data.steamid, data.weaponid],
+      "DELETE FROM wp_player_skins WHERE steamid = ? AND weapon_defindex = ? AND weapon_team IN (?)",
+      [data.steamid, data.weaponid, teams],
       (err, results, fields) => {
-        socket.emit("skin-reset", { weaponid: data.weaponid });
+        connection.query(
+          "SELECT * FROM wp_player_skins WHERE steamid = ?",
+          [data.steamid],
+          (err2, results2, fields2) => {
+            socket.emit("skin-reset", { weaponid: data.weaponid, teams, newSkins: results2 || [] });
+          }
+        );
       }
     );
   });
@@ -504,10 +533,11 @@ io.on("connection", (socket) => {
       }
     }
 
+    const teams = teamsFrom(data.team);
     const rowValues = (team) => [steamid, team, defindex, paint, wear, seed, stattrak, nametag, ...stk];
     connection.query(
-      "INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id, weapon_wear, weapon_seed, weapon_stattrak, weapon_nametag, weapon_sticker_0, weapon_sticker_1, weapon_sticker_2, weapon_sticker_3, weapon_sticker_4) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id), weapon_wear = VALUES(weapon_wear), weapon_seed = VALUES(weapon_seed), weapon_stattrak = VALUES(weapon_stattrak), weapon_nametag = VALUES(weapon_nametag), weapon_sticker_0 = VALUES(weapon_sticker_0), weapon_sticker_1 = VALUES(weapon_sticker_1), weapon_sticker_2 = VALUES(weapon_sticker_2), weapon_sticker_3 = VALUES(weapon_sticker_3), weapon_sticker_4 = VALUES(weapon_sticker_4)",
-      [...rowValues(2), ...rowValues(3)],
+      `INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id, weapon_wear, weapon_seed, weapon_stattrak, weapon_nametag, weapon_sticker_0, weapon_sticker_1, weapon_sticker_2, weapon_sticker_3, weapon_sticker_4) VALUES ${teams.map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id), weapon_wear = VALUES(weapon_wear), weapon_seed = VALUES(weapon_seed), weapon_stattrak = VALUES(weapon_stattrak), weapon_nametag = VALUES(weapon_nametag), weapon_sticker_0 = VALUES(weapon_sticker_0), weapon_sticker_1 = VALUES(weapon_sticker_1), weapon_sticker_2 = VALUES(weapon_sticker_2), weapon_sticker_3 = VALUES(weapon_sticker_3), weapon_sticker_4 = VALUES(weapon_sticker_4)`,
+      teams.flatMap(rowValues),
       (err) => {
         if (err) {
           dbg("apply-inspect skins SQL ERROR", err.message);
@@ -528,14 +558,14 @@ io.on("connection", (socket) => {
         if (KNIFE_DEFINDEX_TO_NAME[defindex]) {
           const knife = KNIFE_DEFINDEX_TO_NAME[defindex];
           connection.query(
-            "INSERT INTO wp_player_knife (steamid, weapon_team, knife) VALUES (?, 2, ?), (?, 3, ?) ON DUPLICATE KEY UPDATE knife = VALUES(knife)",
-            [steamid, knife, steamid, knife],
+            `INSERT INTO wp_player_knife (steamid, weapon_team, knife) VALUES ${teams.map(() => "(?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE knife = VALUES(knife)`,
+            teams.flatMap((t) => [steamid, t, knife]),
             finish
           );
         } else if (defindex >= GLOVE_DEFINDEX_MIN) {
           connection.query(
-            "INSERT INTO wp_player_gloves (steamid, weapon_team, weapon_defindex) VALUES (?, 2, ?), (?, 3, ?) ON DUPLICATE KEY UPDATE weapon_defindex = VALUES(weapon_defindex)",
-            [steamid, defindex, steamid, defindex],
+            `INSERT INTO wp_player_gloves (steamid, weapon_team, weapon_defindex) VALUES ${teams.map(() => "(?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE weapon_defindex = VALUES(weapon_defindex)`,
+            teams.flatMap((t) => [steamid, t, defindex]),
             finish
           );
         } else {

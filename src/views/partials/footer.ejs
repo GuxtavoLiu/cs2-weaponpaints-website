@@ -4,6 +4,7 @@
 <script src="<%= subdir %>js/bootstrap/bootstrap.bundle.min.js"></script>
 
 <script src="<%= subdir %>socket.io/socket.io.js"></script>
+<script src="<%= subdir %>js/teamState.js"></script>
 <script src="<%= subdir %>js/index.js"></script>
 
 <script type="module" src="<%= subdir %>js/lockHandler.js"></script>
@@ -16,6 +17,10 @@
     let subdir = "<%= subdir %>";
     let lang = "<%- langCode %>";
     let langObject = <%- JSON.stringify(lang) %>;
+    // Per-team rows (keyed by weapon_team: 2=T, 3=CT) for the items whose DB
+    // tables hold one row per team. selectedKnife/Gloves/Music below are the
+    // derived "current view" of these maps (see teamState.js).
+    let loadoutByTeam = { knife: {}, gloves: {}, music: {} };
     let selectedKnife = {
         knife: undefined,
         steamid: undefined,
@@ -69,20 +74,20 @@
 </script>
 
 <% if (typeof knife != 'undefined') { %>
-    <script>    
-        selectedKnife = <%- JSON.stringify(knife) %>;
+    <script>
+        (<%- JSON.stringify(knife) %>).forEach(r => { loadoutByTeam.knife[r.weapon_team] = r; });
     </script>
 <% } %>
 
 <% if (typeof skins != 'undefined') { %>
-    <script>    
+    <script>
         let selectedSkins = <%- JSON.stringify(skins) %>;
     </script>
 <% } %>
 
 <% if (typeof gloves != 'undefined') { %>
     <script>
-        selectedGloves = <%- JSON.stringify(gloves) %>;
+        (<%- JSON.stringify(gloves) %>).forEach(r => { loadoutByTeam.gloves[r.weapon_team] = r; });
     </script>
 <% } %>
 
@@ -94,9 +99,14 @@
 
 <% if (typeof musics != 'undefined') { %>
     <script>
-        selectedMusic = <%- JSON.stringify(musics) %>;
+        (<%- JSON.stringify(musics) %>).forEach(r => { loadoutByTeam.music[r.weapon_team] = r; });
     </script>
 <% } %>
+
+<script>
+    // Derive selectedKnife/Gloves/Music for the persisted team selection.
+    syncDerivedSelection();
+</script>
 
 <% if (typeof user != 'undefined') { %>
     <script>    

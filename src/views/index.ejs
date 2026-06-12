@@ -190,12 +190,19 @@
     <%- include('./partials/navbar') %>
 
     <% if (typeof user == 'undefined') { %>
-        <h5 class="text-center mt-4 text-white"><a class="text-accent" href="<%= subdir %>api/auth/steam"><%= lang.needLogin %> <%= lang.viaSteam %></a></h5>
+        <div class="login-hero d-flex flex-column align-items-center justify-content-center text-center text-light px-3">
+            <i class="bi bi-steam login-hero-logo mb-3"></i>
+            <h1 class="login-hero-title mb-2"><%= config.name %></h1>
+            <p class="text-secondary login-hero-sub mb-4"><%= lang.loginTagline || lang.needLogin %></p>
+            <a class="btn btn-steam btn-lg d-inline-flex align-items-center" href="<%= subdir %>api/auth/steam">
+                <i class="bi bi-steam me-2"></i><%= lang.navLogin %> <%= lang.viaSteam %>
+            </a>
+        </div>
     <% } else { %>
 
     <div class="container text-light mt-3">
         <div class="d-block d-lg-none list-group list-group-horizontal position-relative overflow-auto d-flex justify-content-between bg-nav p-2 rounded">
-            <button onclick="showLoadout()" class="btn btn-outline-primary d-flex my-1 mx-1 align-items-center">
+            <button onclick="showLoadout()" id="sideBtnLoadout" class="btn btn-outline-primary d-flex my-1 mx-1 align-items-center">
                 <i class="fa-solid fa-layer-group ms-1 me-2 my-auto"></i>
                 <p class="p-0 m-0 mx-auto"><small><%= lang.sideMenu.loadout %></small></p>
             </button>
@@ -389,7 +396,9 @@
 
     <div class="container-fluid fixed-bottom bg-nav text-light text-center py-3">
         <p class="text-decoration-none text-light m-0"><%= config.name %> | <%= new Date().getFullYear();%> </p>
-        <p class="m-0 text-secondary"><a href="https://github.com/GuxtavoLiu" target="_blank" class="text-secondary">GustavoLiu</a>'s version of cs2weaponpaints website<br>
+        <p class="m-0 text-secondary"><a href="https://github.com/GuxtavoLiu" target="_blank" class="text-secondary">GustavoLiu</a>'s version of cs2weaponpaints website
+            &middot; <a href="#" class="text-secondary" onclick="document.getElementById('originCredits').classList.toggle('d-none'); return false;"><small><%= lang.credits || 'credits' %></small></a></p>
+        <p class="m-0 text-secondary d-none" id="originCredits">
             <small>created by <a href="https://github.com/L1teD/cs2-WeaponPaints-website" target="_blank" class="text-secondary">@L1te</a> and modified by <a href="https://github.com/SwaggyMacro/cs2-WeaponPaints-Website" target="_blank" class="text-secondary">@SwaggyMacro</a></small></p>
     </div>
 

@@ -1373,3 +1373,190 @@ li {
     .sticker2d-body { flex-direction: column; }
     .sticker2d-side { flex-basis: auto; border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.08); }
 }
+
+/* ---- Per-team divergence markers (official T/CT patch icons) ---- */
+/* Badge shown on a grid card in "Both" mode when only one team has the item.
+   Cards (.weapon-card) are position:relative, so absolute pins to the card. */
+.team-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    z-index: 4;
+    pointer-events: none;
+}
+.team-badge img {
+    display: block;
+    width: 22px;
+    height: 22px;
+    filter: drop-shadow(0 0 3px rgba(0, 0, 0, .8));
+}
+
+/* T/CT patch icons inside the team selector buttons. */
+.team-selector img {
+    display: block;
+    width: 16px;
+    height: 16px;
+}
+
+/* Inline T/CT icon next to a loadout card title when the teams diverge. */
+.team-tag {
+    display: inline-flex;
+    align-items: center;
+}
+.team-tag img {
+    display: block;
+    width: 16px;
+    height: 16px;
+}
+
+/* The gear button is absolutely positioned at the card's top-right; keep the
+   title row (weapon name + T/CT chip) from running underneath it. */
+.loadout-clickable > p:first-child {
+    padding-right: 32px;
+}
+
+/* Discreet vertical divider between the CT and T halves in Both mode. */
+.loadout-divider {
+    width: 1px;
+    align-self: stretch;
+    background-color: rgba(255, 255, 255, 0.12);
+    margin: 0 4px;
+}
+
+/* ---- Loadout agent panels (CS2 equipment-menu style) ---- */
+/* Tall vertical card flanking the gun grid: CT on the left, T on the right.
+   Width is hard-capped (long agent names truncate instead of growing the
+   panel and squeezing the gun grid). */
+.loadout-agent-panel {
+    flex: 0 0 190px;
+    max-width: 190px;
+    min-width: 0;
+}
+.loadout-agent-card {
+    background-color: rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    transition: background-color .15s ease;
+    border-top: 3px solid #3a3a3a;
+    overflow: hidden;
+}
+.loadout-agent-card .text-truncate {
+    min-width: 0;
+}
+.loadout-agent-ct { border-top-color: #5d79ae; }
+.loadout-agent-t  { border-top-color: #ccba7c; }
+.loadout-agent-card:hover {
+    background-color: rgba(255, 255, 255, 0.07);
+}
+.loadout-agent-img {
+    width: 100%;
+    height: 330px;
+    object-fit: contain;
+    object-position: center;
+}
+
+/* ---- Logged-out landing hero ---- */
+.login-hero {
+    min-height: calc(100vh - 220px); /* fills the space between navbar and footer */
+}
+.login-hero-logo {
+    font-size: 5rem;
+    color: #66c0f4; /* Steam light blue */
+    filter: drop-shadow(0 0 25px rgba(102, 192, 244, 0.35));
+}
+.login-hero-title {
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+.login-hero-sub {
+    max-width: 520px;
+    font-size: 1.05rem;
+}
+.btn-steam {
+    --bs-btn-color: #fff;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-active-color: #fff;
+    background: linear-gradient(90deg, #06bfff 0%, #2d73ff 100%);
+    border: none;
+    border-radius: 10px;
+    padding: 12px 34px;
+    font-weight: 600;
+    box-shadow: 0 6px 24px rgba(45, 115, 255, 0.35);
+    transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
+}
+.btn-steam:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.08);
+    box-shadow: 0 10px 30px rgba(45, 115, 255, 0.45);
+}
+.btn-steam:active {
+    transform: translateY(0);
+}
+
+/* ---- Navbar "Connect to server" button ---- */
+.btn-connect {
+    --bs-btn-color: #1a1a1a;
+    --bs-btn-hover-color: #1a1a1a;
+    --bs-btn-active-color: #1a1a1a;
+    background: linear-gradient(90deg, var(--lte-accent) 0%, #ff8c1a 100%);
+    border: none;
+    border-radius: 50rem;
+    padding: 5px 18px 5px 7px;
+    font-weight: 700;
+    box-shadow: 0 4px 16px rgba(var(--lte-accent-rgb), 0.25);
+    transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+}
+.btn-connect:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.07);
+    box-shadow: 0 6px 20px rgba(var(--lte-accent-rgb), 0.4);
+}
+.btn-connect:active {
+    transform: translateY(0);
+}
+.btn-connect img {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+}
+
+/* ---- Team selector: dark pill container, accent-gradient active segment ---- */
+.team-selector {
+    background-color: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50rem;
+    padding: 3px;
+    gap: 2px;
+}
+.team-selector .btn {
+    border: none !important;
+    border-radius: 50rem !important;
+    padding: 3px 14px;
+    --bs-btn-color: #c8c8c8;
+    --bs-btn-hover-color: #fff;
+    --bs-btn-hover-bg: rgba(255, 255, 255, 0.08);
+    transition: background .12s ease, color .12s ease;
+}
+.team-selector .btn.active {
+    background: linear-gradient(90deg, var(--lte-accent) 0%, #ff8c1a 100%) !important;
+    color: #1a1a1a !important;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(var(--lte-accent-rgb), 0.45);
+}
+.team-selector .btn.active img {
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.4));
+}
+
+/* CT segment active = CT blue (T/Both keep the accent orange). */
+.team-selector .btn.active[data-team="3"] {
+    background: linear-gradient(90deg, #6fa8ff 0%, #3d6fe0 100%) !important;
+    box-shadow: 0 2px 10px rgba(80, 130, 255, 0.45);
+}
+
+/* Both segment active = half T orange / half CT blue. */
+.team-selector .btn.active[data-team="both"] {
+    background: linear-gradient(105deg, var(--lte-accent) 0%, var(--lte-accent) 45%, #3d6fe0 55%, #3d6fe0 100%) !important;
+    color: #fff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+    box-shadow: 0 2px 10px rgba(160, 130, 160, 0.4);
+}
