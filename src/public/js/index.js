@@ -164,7 +164,7 @@ const STICKER_EMPTY = '0;0;0;0;0;0;0'
 // only offers four; the server still clears the 5th column on save.
 const STICKER_SLOTS = 4
 
-let stickersData = null            // [{id, name, image, rarity, rarityName, effect, type}]
+let stickersData = null            // [{id, name, image, rarity, rarityName, effect, type, comp, compId, org, player, coll}]
 let stickersById = null            // { id: sticker }
 let stickerSlots = new Array(STICKER_SLOTS).fill(0) // selected sticker id per slot (0 = empty)
 // Per-slot placement: offset x/y on the weapon, scale and rotation. The "untouched"
@@ -326,40 +326,213 @@ const onStickerWearInput = (slot) => {
 // the DOM light; the count label still reports the true total of matches).
 const STICKER_RENDER_CAP = 300
 
-// Populate the type / effect / rarity filter dropdowns from the dataset (once).
+// Escape a value for use inside an HTML attribute (option values can contain
+// quotes/ampersands, e.g. team or capsule names).
+const escAttr = (v) => String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')
+
+// Build the candidate pools for the type / effect / rarity / competition
+// typeaheads from the dataset (once), then wire the typeahead inputs. These four
+// used to be native <select>s; they are now free-text comboboxes (type to filter
+// or pick from the dropdown) sharing the same typeahead machinery as
+// collection/org/player, so every filter field behaves consistently.
 const buildStickerFilters = () => {
     if (stickerFiltersBuilt || !stickersData) return
     const uniq = (key) => [...new Set(stickersData.map(s => s[key]).filter(Boolean))].sort()
 
-    const fill = (selId, allLabel, values) => {
-        const sel = document.getElementById(selId)
-        sel.innerHTML = `<option value="">${allLabel}</option>` +
-            values.map(v => `<option value="${v}">${v}</option>`).join('')
-    }
-    fill('stickerFilterType', langObject.allTypes || 'All types', uniq('type'))
-    fill('stickerFilterEffect', langObject.allEffects || 'All effects', uniq('effect'))
+    staticOptions.type = uniq('type')
+    staticOptions.effect = uniq('effect')
 
     // Rarity ordered by in-game tier (lowest -> highest) rather than alphabetically.
     const rarityOrder = ['Default', 'Base Grade', 'High Grade', 'Remarkable', 'Exotic', 'Extraordinary', 'Contraband']
-    const rarities = uniq('rarityName').sort((a, b) => {
+    staticOptions.rarity = uniq('rarityName').sort((a, b) => {
         const ia = rarityOrder.indexOf(a), ib = rarityOrder.indexOf(b)
         return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib)
     })
-    fill('stickerFilterRarity', langObject.allRarities || 'All rarities', rarities)
 
+    // Competition: distinct tournaments, newest first. compId is chronological in
+    // the source (1 = 2013 DreamHack Winter ... 26 = IEM Cologne 2026), so sort by
+    // it descending and fall back to name for any ties / missing ids.
+    const comps = new Map()  // comp name -> compId
+    for (const s of stickersData) { if (s.comp && !comps.has(s.comp)) comps.set(s.comp, s.compId || 0) }
+    staticOptions.comp = [...comps.entries()]
+        .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]))
+        .map(([name]) => name)
+
+    initTypeaheads()
+    rebuildCascade()
     stickerFiltersBuilt = true
 }
+
+// ---- Filter typeaheads (collection / org / player) ----
+// The candidate values stay as plain arrays, NOT as thousands of <option> nodes:
+// the player list alone has ~3000 distinct names, and dumping them into a native
+// <datalist> made opening the list slow. Instead we render at most TYPEAHEAD_CAP
+// suggestions on demand, matched with the same elastic token search the name field
+// uses (every whitespace-separated token must appear), so "cologne autograph" or
+// "natus major" both work.
+const TYPEAHEAD_CAP = 50
+// Cascading pools (recomputed as competition / org change) vs static pools
+// (fixed lists built once). poolFor() picks the right source per field.
+let cascadeOptions = { coll: [], org: [], player: [] }
+let staticOptions = { comp: [], type: [], effect: [], rarity: [] }
+const poolFor = (field) => (field in cascadeOptions) ? cascadeOptions[field] : staticOptions[field]
+const TYPEAHEADS = {
+    comp: { input: 'stickerFilterComp', menu: null },
+    coll: { input: 'stickerFilterColl', menu: null },
+    org: { input: 'stickerFilterOrg', menu: null },
+    player: { input: 'stickerFilterPlayer', menu: null },
+    type: { input: 'stickerFilterType', menu: null },
+    effect: { input: 'stickerFilterEffect', menu: null },
+    rarity: { input: 'stickerFilterRarity', menu: null },
+}
+let typeaheadsInited = false
+
+// Recompute the collection / org / player candidate pools for the current
+// selection. Cascade: the chosen competition narrows all three; the chosen org
+// additionally narrows players (tournament > team > player). No DOM work here.
+const rebuildCascade = () => {
+    if (!stickersData) return
+    const fComp = ((document.getElementById('stickerFilterComp') || {}).value || '').trim().toLowerCase()
+    const fOrg = ((document.getElementById('stickerFilterOrg') || {}).value || '').trim().toLowerCase()
+    const colls = new Set(), orgs = new Set(), players = new Set()
+    for (let i = 0; i < stickersData.length; i++) {
+        const s = stickersData[i]
+        if (fComp && !(s.comp && s.comp.toLowerCase().includes(fComp))) continue
+        if (s.org) orgs.add(s.org)
+        if (s.coll) for (let c = 0; c < s.coll.length; c++) colls.add(s.coll[c])
+        if (s.player && (!fOrg || (s.org && s.org.toLowerCase().includes(fOrg)))) players.add(s.player)
+    }
+    cascadeOptions.coll = [...colls].sort()
+    cascadeOptions.org = [...orgs].sort()
+    cascadeOptions.player = [...players].sort()
+}
+
+const hideTypeahead = (field) => { const m = TYPEAHEADS[field].menu; if (m) m.classList.remove('show') }
+const hideAllTypeaheads = () => Object.keys(TYPEAHEADS).forEach(hideTypeahead)
+const anyTypeaheadOpen = () => Object.keys(TYPEAHEADS).some(f => { const m = TYPEAHEADS[f].menu; return m && m.classList.contains('show') })
+
+// Render up to TYPEAHEAD_CAP elastic matches for one field into its dropdown menu.
+const renderTypeahead = (field) => {
+    const cfg = TYPEAHEADS[field]
+    const input = document.getElementById(cfg.input)
+    const menu = cfg.menu
+    if (!input || !menu) return
+    const tokens = input.value.toLowerCase().split(/\s+/).filter(Boolean)
+    const pool = poolFor(field)
+    const out = []
+    for (let i = 0; i < pool.length && out.length < TYPEAHEAD_CAP; i++) {
+        const v = pool[i]
+        if (tokens.length) {
+            const hay = v.toLowerCase()
+            let ok = true
+            for (let t = 0; t < tokens.length; t++) { if (!hay.includes(tokens[t])) { ok = false; break } }
+            if (!ok) continue
+        }
+        out.push(v)
+    }
+    if (!out.length) { menu.innerHTML = ''; menu.classList.remove('show'); return }
+    menu.innerHTML = out.map(v => `<li data-val="${escAttr(v)}">${v}</li>`).join('')
+    menu.classList.add('show')
+}
+
+// Commit a chosen suggestion.
+const chooseTypeahead = (field, val) => {
+    const input = document.getElementById(TYPEAHEADS[field].input)
+    if (input) input.value = val
+    hideTypeahead(field)
+    // Competition narrows coll/org/player; org additionally narrows players.
+    if (field === 'comp' || field === 'org') rebuildCascade()
+    renderStickerResults()
+}
+
+// Create each field's dropdown menu and wire focus / blur / mouse / keyboard once.
+const initTypeaheads = () => {
+    if (typeaheadsInited) return
+    Object.keys(TYPEAHEADS).forEach(field => {
+        const cfg = TYPEAHEADS[field]
+        const input = document.getElementById(cfg.input)
+        if (!input) return
+        const menu = document.createElement('ul')
+        menu.className = 'sticker-typeahead-menu'
+        input.parentNode.appendChild(menu)  // parent col is .sticker-ta (position:relative)
+        cfg.menu = menu
+        input.addEventListener('focus', () => renderTypeahead(field))
+        input.addEventListener('blur', () => setTimeout(() => hideTypeahead(field), 150))
+        // mousedown (not click) so selection fires before the input's blur hides the menu.
+        menu.addEventListener('mousedown', (e) => {
+            const li = e.target.closest('li[data-val]')
+            if (!li) return
+            e.preventDefault()
+            chooseTypeahead(field, li.getAttribute('data-val'))
+        })
+        input.addEventListener('keydown', (e) => {
+            if (!menu.classList.contains('show')) return
+            const items = menu.querySelectorAll('li')
+            if (!items.length) return
+            let idx = -1
+            for (let i = 0; i < items.length; i++) if (items[i].classList.contains('active')) idx = i
+            if (e.key === 'ArrowDown') { e.preventDefault(); idx = (idx + 1) % items.length }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); idx = (idx - 1 + items.length) % items.length }
+            else if (e.key === 'Enter') { if (idx >= 0) { e.preventDefault(); chooseTypeahead(field, items[idx].getAttribute('data-val')) } return }
+            else if (e.key === 'Escape') { hideTypeahead(field); return }
+            else return
+            for (let i = 0; i < items.length; i++) items[i].classList.toggle('active', i === idx)
+            items[idx].scrollIntoView({ block: 'nearest' })
+        })
+    })
+    typeaheadsInited = true
+}
+
+// Every filter input id, in display order.
+const STICKER_FILTER_IDS = ['stickerSearch', 'stickerFilterComp', 'stickerFilterColl',
+    'stickerFilterOrg', 'stickerFilterPlayer', 'stickerFilterType', 'stickerFilterEffect',
+    'stickerFilterRarity']
+
+// Reset every sticker filter back to "all".
+const resetStickerFilters = () => {
+    STICKER_FILTER_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.value = '' })
+    hideAllTypeaheads()
+    rebuildCascade()
+    renderStickerResults()
+}
+
+// Per-slot filter memory: the filters a user set for a slot are remembered so
+// reopening the picker for that same slot restores them (keyed by slot index).
+const stickerFilterStateBySlot = {}
+const captureStickerFilters = () => {
+    const st = {}
+    STICKER_FILTER_IDS.forEach(id => { const el = document.getElementById(id); if (el) st[id] = el.value })
+    return st
+}
+const applyStickerFilters = (st) => {
+    STICKER_FILTER_IDS.forEach(id => { const el = document.getElementById(id); if (el) el.value = (st && st[id]) || '' })
+    hideAllTypeaheads()
+    rebuildCascade()
+    renderStickerResults()
+}
+
+// Competition change re-narrows the candidate pools then re-renders. The free-text
+// typeaheads update their menu live and re-render results (debounced); org also
+// re-narrows the player pool as you type.
+let stickerFilterTimer
+const debouncedFilter = (fn) => { clearTimeout(stickerFilterTimer); stickerFilterTimer = setTimeout(fn, 120) }
+const onStickerCompInput = () => { rebuildCascade(); renderTypeahead('comp'); debouncedFilter(renderStickerResults) }
+const onStickerCollInput = () => { renderTypeahead('coll'); debouncedFilter(renderStickerResults) }
+const onStickerOrgInput = () => { rebuildCascade(); renderTypeahead('org'); debouncedFilter(renderStickerResults) }
+const onStickerPlayerInput = () => { renderTypeahead('player'); debouncedFilter(renderStickerResults) }
+const onStickerTypeInput = () => { renderTypeahead('type'); debouncedFilter(renderStickerResults) }
+const onStickerEffectInput = () => { renderTypeahead('effect'); debouncedFilter(renderStickerResults) }
+const onStickerRarityInput = () => { renderTypeahead('rarity'); debouncedFilter(renderStickerResults) }
 
 const openStickerPicker = (slot) => {
     activeStickerSlot = slot
     ensureStickersLoaded().then(() => {
         buildStickerFilters()
         document.getElementById('stickerPickerSlotLabel').innerText = `#${slot + 1}`
-        document.getElementById('stickerSearch').value = ''
-        document.getElementById('stickerFilterType').value = ''
-        document.getElementById('stickerFilterEffect').value = ''
-        document.getElementById('stickerFilterRarity').value = ''
-        renderStickerResults()
+        // Restore the filters last used for this slot, or start fresh.
+        const saved = stickerFilterStateBySlot[slot]
+        if (saved) applyStickerFilters(saved)
+        else resetStickerFilters()
         document.getElementById('stickerPicker').classList.add('show')
         // Defer focus so the show transition doesn't swallow it.
         setTimeout(() => document.getElementById('stickerSearch').focus(), 30)
@@ -367,6 +540,8 @@ const openStickerPicker = (slot) => {
 }
 
 const closeStickerPicker = () => {
+    // Remember this slot's filters so reopening the picker for it restores them.
+    if (activeStickerSlot != null) stickerFilterStateBySlot[activeStickerSlot] = captureStickerFilters()
     const el = document.getElementById('stickerPicker')
     if (el) el.classList.remove('show')
 }
@@ -381,6 +556,9 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         const el = document.getElementById('stickerPicker')
         if (el && el.classList.contains('show')) {
+            // A type-ahead dropdown swallows Escape first; only the second Escape
+            // (or one with no dropdown open) closes the whole picker.
+            if (anyTypeaheadOpen()) { e.stopPropagation(); hideAllTypeaheads(); return }
             e.stopPropagation()
             closeStickerPicker()
         }
@@ -398,9 +576,13 @@ const renderStickerResults = () => {
     // Elastic search: case-insensitive, every whitespace-separated token must
     // appear somewhere in the name (so "kato nuke" finds "... | Katowice 2014 | Nuke").
     const tokens = document.getElementById('stickerSearch').value.toLowerCase().split(/\s+/).filter(Boolean)
-    const fType = document.getElementById('stickerFilterType').value
-    const fEffect = document.getElementById('stickerFilterEffect').value
-    const fRarity = document.getElementById('stickerFilterRarity').value
+    const fType = document.getElementById('stickerFilterType').value.trim().toLowerCase()
+    const fEffect = document.getElementById('stickerFilterEffect').value.trim().toLowerCase()
+    const fRarity = document.getElementById('stickerFilterRarity').value.trim().toLowerCase()
+    const fComp = document.getElementById('stickerFilterComp').value.trim().toLowerCase()
+    const fColl = document.getElementById('stickerFilterColl').value.trim().toLowerCase()
+    const fOrg = document.getElementById('stickerFilterOrg').value.trim().toLowerCase()
+    const fPlayer = document.getElementById('stickerFilterPlayer').value.trim().toLowerCase()
 
     const matches = []
     let total = 0
@@ -412,9 +594,16 @@ const renderStickerResults = () => {
             for (let t = 0; t < tokens.length; t++) { if (!hay.includes(tokens[t])) { ok = false; break } }
             if (!ok) continue
         }
-        if (fType && s.type !== fType) continue
-        if (fEffect && s.effect !== fEffect) continue
-        if (fRarity && s.rarityName !== fRarity) continue
+        // All structured filters are forgiving, case-insensitive substring matches
+        // (the fields are free-text comboboxes, so typing a partial value narrows
+        // progressively and picking a full value from the dropdown still matches).
+        if (fType && !(s.type && s.type.toLowerCase().includes(fType))) continue
+        if (fEffect && !(s.effect && s.effect.toLowerCase().includes(fEffect))) continue
+        if (fRarity && !(s.rarityName && s.rarityName.toLowerCase().includes(fRarity))) continue
+        if (fComp && !(s.comp && s.comp.toLowerCase().includes(fComp))) continue
+        if (fColl && !(s.coll && s.coll.some(c => c.toLowerCase().includes(fColl)))) continue
+        if (fOrg && !(s.org && s.org.toLowerCase().includes(fOrg))) continue
+        if (fPlayer && !(s.player && s.player.toLowerCase().includes(fPlayer))) continue
         total++
         if (matches.length < STICKER_RENDER_CAP) matches.push(s)
     }
@@ -455,6 +644,14 @@ window.closeStickerPicker = closeStickerPicker
 window.onStickerOverlayClick = onStickerOverlayClick
 window.onStickerSearchInput = onStickerSearchInput
 window.onStickerWearInput = onStickerWearInput
+window.onStickerCompInput = onStickerCompInput
+window.onStickerCollInput = onStickerCollInput
+window.onStickerOrgInput = onStickerOrgInput
+window.onStickerPlayerInput = onStickerPlayerInput
+window.onStickerTypeInput = onStickerTypeInput
+window.onStickerEffectInput = onStickerEffectInput
+window.onStickerRarityInput = onStickerRarityInput
+window.resetStickerFilters = resetStickerFilters
 window.renderStickerResults = renderStickerResults
 window.selectSticker = selectSticker
 window.clearSticker = clearSticker

@@ -1067,6 +1067,48 @@ li {
 .sticker-filter-bar .form-control {
     min-width: 130px;
 }
+/* Custom type-ahead dropdown for the collection / org / player filters. The
+   parent col is .sticker-ta (position:relative); the menu is built in JS and
+   only ever holds the matched suggestions (capped), so it stays light. */
+.sticker-ta {
+    position: relative;
+}
+.sticker-typeahead-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 30;
+    margin-top: 2px;
+    padding: 4px;
+    min-width: 100%;
+    width: max-content;
+    max-width: 320px;
+    max-height: 260px;
+    overflow-y: auto;
+    list-style: none;
+    background-color: #15181c;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.sticker-typeahead-menu.show {
+    display: block;
+}
+.sticker-typeahead-menu li {
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: .85rem;
+    color: #d7d7d7;
+}
+.sticker-typeahead-menu li:hover,
+.sticker-typeahead-menu li.active {
+    background-color: rgba(255, 255, 255, 0.12);
+}
 .sticker-results-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));

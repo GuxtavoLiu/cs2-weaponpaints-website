@@ -81,21 +81,38 @@
                     <button type="button" class="btn-close btn-close-white" onclick="closeStickerPicker()" aria-label="Close"></button>
                 </div>
                 <div class="sticker-picker-body">
-                    <!-- Filter bar -->
+                    <!-- Filter bar. Every dropdown (competition / collection / org /
+                         player / type / effect / rarity) is a custom type-ahead input:
+                         type to filter or pick from the dropdown built in index.js.
+                         They cascade (picking a competition narrows collection/org/
+                         player, picking an org narrows players). -->
                     <div class="row g-2 mb-3 sticker-filter-bar">
                         <div class="col-12 col-md">
                             <input type="text" id="stickerSearch" class="form-control" placeholder="<%= lang.searchStickers %>" oninput="onStickerSearchInput()" data-bs-theme="dark" autocomplete="off">
                         </div>
-                        <div class="col-6 col-md-auto">
-                            <select id="stickerFilterType" class="form-select" onchange="renderStickerResults()" data-bs-theme="dark"></select>
+                        <div class="col-6 col-md-auto sticker-ta">
+                            <input type="text" id="stickerFilterComp" class="form-control" placeholder="<%= lang.allCompetitions %>" oninput="onStickerCompInput()" data-bs-theme="dark" autocomplete="off">
                         </div>
-                        <div class="col-6 col-md-auto">
-                            <select id="stickerFilterEffect" class="form-select" onchange="renderStickerResults()" data-bs-theme="dark"></select>
+                        <div class="col-6 col-md-auto sticker-ta">
+                            <input type="text" id="stickerFilterColl" class="form-control" placeholder="<%= lang.filterColl %>" oninput="onStickerCollInput()" data-bs-theme="dark" autocomplete="off">
                         </div>
-                        <div class="col-6 col-md-auto">
-                            <select id="stickerFilterRarity" class="form-select" onchange="renderStickerResults()" data-bs-theme="dark"></select>
+                        <div class="col-6 col-md-auto sticker-ta">
+                            <input type="text" id="stickerFilterOrg" class="form-control" placeholder="<%= lang.filterOrg %>" oninput="onStickerOrgInput()" data-bs-theme="dark" autocomplete="off">
                         </div>
-                        <div class="col-6 col-md-auto d-flex align-items-center">
+                        <div class="col-6 col-md-auto sticker-ta">
+                            <input type="text" id="stickerFilterPlayer" class="form-control" placeholder="<%= lang.filterPlayer %>" oninput="onStickerPlayerInput()" data-bs-theme="dark" autocomplete="off">
+                        </div>
+                        <div class="col-6 col-md-auto sticker-ta">
+                            <input type="text" id="stickerFilterType" class="form-control" placeholder="<%= lang.allTypes %>" oninput="onStickerTypeInput()" data-bs-theme="dark" autocomplete="off">
+                        </div>
+                        <div class="col-6 col-md-auto sticker-ta">
+                            <input type="text" id="stickerFilterEffect" class="form-control" placeholder="<%= lang.allEffects %>" oninput="onStickerEffectInput()" data-bs-theme="dark" autocomplete="off">
+                        </div>
+                        <div class="col-6 col-md-auto sticker-ta">
+                            <input type="text" id="stickerFilterRarity" class="form-control" placeholder="<%= lang.allRarities %>" oninput="onStickerRarityInput()" data-bs-theme="dark" autocomplete="off">
+                        </div>
+                        <div class="col-6 col-md-auto d-flex align-items-center gap-2">
+                            <button type="button" id="stickerFilterReset" class="btn btn-sm btn-outline-secondary" onclick="resetStickerFilters()"><%= lang.resetFilters %></button>
                             <small class="text-secondary" id="stickerResultCount"></small>
                         </div>
                     </div>
