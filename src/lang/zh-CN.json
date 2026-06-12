@@ -24,6 +24,8 @@
     "loadoutEmpty": "你还没有自定义任何物品。请在左侧选择一个分类。",
     "loadoutShowDefault": "显示默认",
     "loadoutShowAll": "显示全部",
+    "back": "返回",
+    "showAll": "显示全部",
     "needLogin": "你需要先登陆，才能设置皮肤。",
     "viaSteam": "通过Steam登陆",
     "change": "修改",

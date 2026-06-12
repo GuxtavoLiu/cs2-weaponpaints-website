@@ -79,7 +79,7 @@ const sideBtnHandler = (activeBtn) => {
   for (var i = 0; i < elms.length; i++) elms[i].classList.add("active-side");
 };
 
-const showDefaults = (type) => {
+const showDefaults = (type, toolbarOpts) => {
   // clear main container
   document.getElementById("skinsContainer").innerHTML = "";
 
@@ -138,7 +138,7 @@ const showDefaults = (type) => {
       }
     });
   }
-  window.mountSkinsToolbar();
+  window.mountSkinsToolbar(toolbarOpts);
 };
 
 const showKnives = () => {
@@ -148,7 +148,13 @@ const showKnives = () => {
 
 const showGloves = () => {
   sideBtnHandler("sideBtnGloves");
-  showDefaults("sfui_invpanel_filter_gloves");
+  showDefaults("sfui_invpanel_filter_gloves", {
+    toggle: {
+      label: langObject.showAll || "Show all",
+      onclick: "showAllGloves()",
+      active: false,
+    },
+  });
 };
 
 const showMusics = () => {
@@ -444,101 +450,100 @@ socket.on("music-changed", (data) => {
     "hidden";
 });
 
+// Maps a weapon_type from defaultsObject to the side-menu function that renders
+// its category list, so the skins view can offer a "back" button.
+const CATEGORY_SHOW_FN = {
+  sfui_invpanel_filter_melee: "showKnives()",
+  sfui_invpanel_filter_gloves: "showGloves()",
+  csgo_inventory_weapon_category_pistols: "showPistols()",
+  csgo_inventory_weapon_category_rifles: "showRifles()",
+  csgo_inventory_weapon_category_smgs: "showPPs()",
+  csgo_inventory_weapon_category_heavy: "showShotguns()",
+  csgo_inventory_weapon_category_utility: "showUtility()",
+};
+
 window.knifeSkins = (knifeType) => {
   // clear main container
   document.getElementById("skinsContainer").innerHTML = "";
 
+  const weaponDef = defaultsObject.find((d) => d.weapon_name == knifeType);
+  const backTo = weaponDef ? CATEGORY_SHOW_FN[weaponDef.weapon_type] : null;
+
   skinsObject.forEach((element) => {
     if (element.weapon.id == knifeType) {
-      let rarities = {
-        "#b0c3d9": "common",
-        "#5e98d9": "uncommon",
-        "#4b69ff": "rare",
-        "#8847ff": "mythical",
-        "#d32ce6": "legendary",
-        "#eb4b4b": "ancient",
-        "#e4ae39": "contraband",
-      };
+      document
+        .getElementById("skinsContainer")
+        .appendChild(buildSkinCard(element));
+    }
+  });
+  window.mountSkinsToolbar(backTo ? { back: backTo } : undefined);
+};
 
-      let bgColor = "card-uncommon";
-      let phase = "";
-      let active = "";
-      let steamid = user.id;
-      let weaponid = weaponIds[element.weapon.id];
-      let paintid = element.paint_index;
-      let float = 0.000001;
-      let pattern = 0;
+// Builds one skin card. Shared by the per-type view (knifeSkins) and the
+// all-gloves view (showAllGloves).
+const buildSkinCard = (element) => {
+  let rarities = {
+    "#b0c3d9": "common",
+    "#5e98d9": "uncommon",
+    "#4b69ff": "rare",
+    "#8847ff": "mythical",
+    "#d32ce6": "legendary",
+    "#eb4b4b": "ancient",
+    "#e4ae39": "contraband",
+  };
 
-      // Get color of item for card
-      if (element.category.id == "sfui_invpanel_filter_melee") {
-        // Gold if knife
-        bgColor = "card-gold";
-      } else {
-        // Anything else
-        bgColor = `card-${rarities[element.rarity.color]}`;
-      }
+  let bgColor = "card-uncommon";
+  let phase = "";
+  let active = "";
 
-      // Phase for Dopplers
-      if (typeof element.phase != "undefined") {
-        phase = `(${element.phase})`;
-      }
+  // Get color of item for card
+  if (element.category.id == "sfui_invpanel_filter_melee") {
+    // Gold if knife
+    bgColor = "card-gold";
+  } else {
+    // Anything else
+    bgColor = `card-${rarities[element.rarity.color]}`;
+  }
 
-      // Make outline if this skin is selected
-      selectedSkins.forEach((el) => {
-        if (
-          el.weapon_paint_id == element.paint_index &&
-          (el.weapon_defindex == weaponIds[element.weapon.id] ||
-            el.model_idx == weaponIds[element.weapon.id])
-        ) {
-          active = "active-card";
-          float = el.weapon_wear;
-          pattern = el.weapon_seed;
-        }
-      });
+  // Phase for Dopplers
+  if (typeof element.phase != "undefined") {
+    phase = `(${element.phase})`;
+  }
 
-      let card = document.createElement("div");
-      card.classList.add("col-6", "col-sm-4", "col-md-3", "p-2");
+  // Make outline if this skin is selected
+  selectedSkins.forEach((el) => {
+    if (
+      el.weapon_paint_id == element.paint_index &&
+      (el.weapon_defindex == weaponIds[element.weapon.id] ||
+        el.model_idx == weaponIds[element.weapon.id])
+    ) {
+      active = "active-card";
+    }
+  });
 
-      card.innerHTML = `
-                <div onclick="changeSkin(\'${user.id}\', \'${
-        weaponIds[element.weapon.id]
-      }\', ${element.paint_index})" id="weapon-${
-        weaponIds[element.weapon.id]
-      }-${
-        element.paint_index
-      }" class="weapon-card rounded-3 d-flex flex-column ${active} ${bgColor} contrast-reset pb-2" data-type="skinCard" data-btn-type="${
-        weaponIds[element.weapon.id]
-      }-${element.paint_index}">
-                    <div style="z-index: 3;" class="locked-card d-flex flex-column justify-content-center align-items-center w-100 h-100" id="locked-${
-                      weaponIds[element.weapon.id]
-                    }-${element.paint_index}">
+  let card = document.createElement("div");
+  card.classList.add("col-6", "col-sm-4", "col-md-3", "p-2");
+
+  card.innerHTML = `
+                <div onclick="changeSkin(\'${user.id}\', \'${weaponIds[element.weapon.id]}\', ${element.paint_index})" id="weapon-${weaponIds[element.weapon.id]}-${element.paint_index}" class="weapon-card rounded-3 d-flex flex-column ${active} ${bgColor} contrast-reset pb-2" data-type="skinCard" data-btn-type="${weaponIds[element.weapon.id]}-${element.paint_index}">
+                    <div style="z-index: 3;" class="locked-card d-flex flex-column justify-content-center align-items-center w-100 h-100" id="locked-${weaponIds[element.weapon.id]}-${element.paint_index}">
                         <i class="fa-solid fa-lock"></i>
                         <p class="m-0">Buy Premium</p>
                     </div>
 
-                
-                    <div style="z-index: 3;" class="loading-card d-flex justify-content-center align-items-center w-100 h-100" id="loading-${
-                      weaponIds[element.weapon.id]
-                    }-${element.paint_index}">
+
+                    <div style="z-index: 3;" class="loading-card d-flex justify-content-center align-items-center w-100 h-100" id="loading-${weaponIds[element.weapon.id]}-${element.paint_index}">
                         <div class="spinner-border spinner-border-xl" role="status">
                             <span class="visually-hidden">Loading...</span>
                         </div>
                     </div>
 
-                    <button onclick="editModal(\'${element.image}\', \'${
-        element.weapon.name
-      }\', \'${element.pattern.name} ${phase}\', \'${element.weapon.id}\' , \'${
-        element.paint_index
-      }\', ${!!element.stattrak})" style="z-index: 3;" class="settings d-flex justify-content-center align-items-center bg-light text-dark rounded-circle" data-bs-toggle="modal" data-bs-target="#patternFloat">
+                    <button onclick="editModal(\'${element.image}\', \'${element.weapon.name}\', \'${element.pattern.name} ${phase}\', \'${element.weapon.id}\' , \'${element.paint_index}\', ${!!element.stattrak})" style="z-index: 3;" class="settings d-flex justify-content-center align-items-center bg-light text-dark rounded-circle" data-bs-toggle="modal" data-bs-target="#patternFloat">
                         <i class="fa-solid fa-gear"></i>
                     </button>
 
-                    <img src="${
-                      element.image
-                    }" class="weapon-img mx-auto my-3" loading="lazy" width="181px" height="136px" alt="${
-        element.name
-      }">
-                    
+                    <img src="${element.image}" class="weapon-img mx-auto my-3" loading="lazy" width="181px" height="136px" alt="${element.name}">
+
                     <div class="d-flex align-items-center g-3">
                         <p class="m-0 ms-3 text-secondary">
                             <small class="text-roboto">
@@ -547,15 +552,38 @@ window.knifeSkins = (knifeType) => {
                         </p>
                         <div class="skin-dot mx-2"></div>
                     </div>
-                    
+
                     <h5 class="weapon-skin-title text-roboto ms-3">
                         ${element.pattern.name} ${phase}
                     </h5>
                 </div>
             `;
 
-      document.getElementById("skinsContainer").appendChild(card);
-    }
+  return card;
+};
+
+// "Show all" gloves: every glove skin from every glove type in a single grid,
+// ordered by glove type then skin name. Toggled from the gloves toolbar.
+window.showAllGloves = () => {
+  sideBtnHandler("sideBtnGloves");
+  document.getElementById("skinsContainer").innerHTML = "";
+
+  skinsObject
+    .filter((el) => el.category.id == "sfui_invpanel_filter_gloves")
+    .sort(
+      (a, b) =>
+        a.weapon.name.localeCompare(b.weapon.name) ||
+        a.pattern.name.localeCompare(b.pattern.name)
+    )
+    .forEach((el) =>
+      document.getElementById("skinsContainer").appendChild(buildSkinCard(el))
+    );
+
+  window.mountSkinsToolbar({
+    toggle: {
+      label: langObject.showAll || "Show all",
+      onclick: "showGloves()",
+      active: true,
+    },
   });
-  window.mountSkinsToolbar();
 };

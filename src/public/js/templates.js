@@ -737,15 +737,23 @@ window.onSkinsSearchInput = () => {
     skinsSearchTimer = setTimeout(applySkinsFilterSort, 120)
 }
 window.onSkinsSortChange = () => applySkinsFilterSort()
-window.mountSkinsToolbar = () => {
+window.mountSkinsToolbar = (opts) => {
     const container = document.getElementById('skinsContainer')
     if (!container) return
     const cards = Array.from(container.children).filter((c) => !c.classList.contains('skins-toolbar'))
     if (!cards.length) return
     const L = (typeof langObject !== 'undefined') ? langObject : {}
+    const backBtn = (opts && opts.back)
+        ? `<button type="button" class="btn btn-outline-primary btn-sm" onclick="${opts.back}" title="${L.back || 'Back'}"><i class="fa-solid fa-arrow-left me-1"></i><small>${L.back || 'Back'}</small></button>`
+        : ''
+    const toggleBtn = (opts && opts.toggle)
+        ? `<button type="button" class="btn btn-outline-primary btn-sm${opts.toggle.active ? ' active' : ''}" onclick="${opts.toggle.onclick}"><i class="fa-solid fa-layer-group me-1"></i><small>${opts.toggle.label}</small></button>`
+        : ''
     const bar = document.createElement('div')
     bar.className = 'skins-toolbar col-12 d-flex flex-wrap align-items-center gap-2 mb-3'
     bar.innerHTML = `
+        ${backBtn}
+        ${toggleBtn}
         <button type="button" id="cardSizeBtn" class="btn btn-outline-primary btn-sm" onclick="cycleCardSize()" title="${L.cardSize || 'Card size'}"><i class="fa-solid fa-table-cells"></i></button>
         <input type="text" id="skinsSearch" class="form-control form-control-sm" style="max-width:260px;" placeholder="${L.search || 'Search'}" oninput="onSkinsSearchInput()" data-bs-theme="dark" autocomplete="off">
         <select id="skinsSort" class="form-select form-select-sm" style="max-width:210px;" onchange="onSkinsSortChange()" data-bs-theme="dark">

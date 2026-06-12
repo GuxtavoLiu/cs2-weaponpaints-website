@@ -21,6 +21,8 @@
     "loadoutEmpty": "Вы ещё ничего не настроили. Выберите категорию слева.",
     "loadoutShowDefault": "Показать основное",
     "loadoutShowAll": "Показать всё",
+    "back": "Назад",
+    "showAll": "Показать все",
     "needLogin": "Нужно войти",
     "viaSteam": "через Steam",
     "change": "Сменить",
