@@ -1,5 +1,6 @@
 <p align="center">
     <a href="README.md"><img src="https://img.shields.io/badge/LANG-ENGLISH-blue"></a>
+    <a href="README_pt.md"><img src="https://img.shields.io/badge/IDIOMA-PORTUGU%C3%8AS-yellow"></a>
     <a href="README_cn.md"><img src="https://img.shields.io/badge/语言-简体中文-red"></a>
     <img src="https://img.shields.io/badge/license-GPL--3.0-green">
     <img src="https://img.shields.io/badge/node-%E2%89%A517-brightgreen">
@@ -32,10 +33,9 @@
 ## 截图
 
 <div>
-    <img src="/previews/2_1.png?raw=true" width="400">
-    <img src="/previews/2_2.png?raw=true" width="400">
-    <img src="/previews/2_3.png?raw=true" width="400">
-    <img src="/previews/2_4.png?raw=true" width="400">
+    <img src="/previews/loadout.png?raw=true" width="400">
+    <img src="/previews/knives.png?raw=true" width="400">
+    <img src="/previews/float-pattern.png?raw=true" width="400">
 </div>
 
 ## 环境要求
