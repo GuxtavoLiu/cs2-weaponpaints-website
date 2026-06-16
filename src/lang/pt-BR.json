@@ -120,5 +120,6 @@
     "shareApplying":"Aplicando loadout",
     "shareApplied":"Loadout aplicado!",
     "shareInvalid":"Código de loadout inválido.",
-    "shareEmpty":"Seu loadout está vazio - nada para compartilhar ainda."
+    "shareEmpty":"Seu loadout está vazio - nada para compartilhar ainda.",
+    "shareCopyManual":"Não foi possível copiar automaticamente - copie o código abaixo manualmente."
 }

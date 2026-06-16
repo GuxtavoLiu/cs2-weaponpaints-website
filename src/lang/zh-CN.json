@@ -114,5 +114,6 @@
     "shareApplying":"正在应用",
     "shareApplied":"装备已应用！",
     "shareInvalid":"无效的装备代码。",
-    "shareEmpty":"你的装备为空 — 暂时没有可分享的内容。"
+    "shareEmpty":"你的装备为空 — 暂时没有可分享的内容。",
+    "shareCopyManual":"无法自动复制，请手动复制下方的代码。"
 }

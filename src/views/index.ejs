@@ -213,6 +213,9 @@
                         <button type="button" id="shareCopyBtn" class="btn btn-accent w-100 share-copy-btn" onclick="copyShareCode()">
                             <i class="fa-solid fa-copy me-2"></i><span id="shareCopyLabel"><%= lang.shareCopy %></span>
                         </button>
+                        <!-- Only revealed if the clipboard write fails (non-secure context): the
+                             code is shown here, pre-selected, for the user to copy by hand. -->
+                        <input type="text" id="shareExportCode" class="form-control share-textarea mt-2" readonly style="display:none;" onclick="this.select()" data-bs-theme="dark">
                     </div>
 
                     <!-- Import: paste a code and apply it. -->

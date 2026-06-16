@@ -126,17 +126,37 @@ const buildLoadoutExport = () => {
 // clipboard directly.
 let exportCode = ''
 
-const fallbackCopy = (text, cb) => {
+// execCommand('copy') fallback for non-secure contexts (plain HTTP on a public
+// IP), where navigator.clipboard is undefined. Returns whether the copy
+// actually succeeded so the caller can offer a manual copy when it didn't.
+const fallbackCopy = (text) => {
     const t = document.createElement('textarea')
     t.value = text
+    t.setAttribute('readonly', '')
     t.style.position = 'fixed'
+    t.style.top = '0'
+    t.style.left = '0'
     t.style.opacity = '0'
     document.body.appendChild(t)
     t.focus()
     t.select()
-    try { document.execCommand('copy') } catch (e) { /* ignore */ }
+    try { t.setSelectionRange(0, text.length) } catch (e) { /* ignore */ }
+    let ok = false
+    try { ok = document.execCommand('copy') } catch (e) { ok = false }
     document.body.removeChild(t)
-    cb && cb()
+    return ok
+}
+
+// Last resort when neither the async API nor execCommand can write the
+// clipboard: show the code in a selectable field so the user copies it by hand.
+const revealExportCode = () => {
+    const f = document.getElementById('shareExportCode')
+    if (!f) { try { window.prompt(langObject.shareCopy || 'Copy code', exportCode) } catch (e) {} return }
+    f.style.display = 'block'
+    f.value = exportCode
+    f.focus()
+    f.select()
+    window.showToast?.(langObject.shareCopyManual || 'Copy the code manually', 'info', true)
 }
 
 window.openShareModal = () => {
@@ -145,7 +165,9 @@ window.openShareModal = () => {
     const imp = document.getElementById('shareImportCode')
     const copyBtn = document.getElementById('shareCopyBtn')
     const copyLabel = document.getElementById('shareCopyLabel')
+    const exp = document.getElementById('shareExportCode')
     if (imp) imp.value = ''
+    if (exp) { exp.value = ''; exp.style.display = 'none' }
     if (status) { status.className = 'm-0 mt-2 small'; status.innerText = '' }
     if (copyLabel) copyLabel.innerText = exportCode ? (langObject.shareCopy || 'Copy code') : (langObject.shareEmpty || 'Nothing to share')
     if (copyBtn) { copyBtn.disabled = !exportCode; copyBtn.classList.remove('copied') }
@@ -157,7 +179,7 @@ window.copyShareCode = () => {
     if (!exportCode) return
     const copyBtn = document.getElementById('shareCopyBtn')
     const copyLabel = document.getElementById('shareCopyLabel')
-    const ok = () => {
+    const onSuccess = () => {
         if (copyLabel) copyLabel.innerText = langObject.shareCopied || 'Copied!'
         if (copyBtn) copyBtn.classList.add('copied')
         window.showToast?.(langObject.shareCopied || 'Code copied!', 'success', true)
@@ -166,10 +188,14 @@ window.copyShareCode = () => {
             if (copyBtn) copyBtn.classList.remove('copied')
         }, 1600)
     }
+    // Only report success when the clipboard write actually worked; otherwise
+    // reveal the code for a manual copy (don't fake a "Copied!" that did nothing).
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(exportCode).then(ok, () => fallbackCopy(exportCode, ok))
+        navigator.clipboard.writeText(exportCode).then(onSuccess, () => {
+            fallbackCopy(exportCode) ? onSuccess() : revealExportCode()
+        })
     } else {
-        fallbackCopy(exportCode, ok)
+        fallbackCopy(exportCode) ? onSuccess() : revealExportCode()
     }
 }
 

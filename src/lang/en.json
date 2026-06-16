@@ -121,5 +121,6 @@
     "shareApplying":"Applying loadout",
     "shareApplied":"Loadout applied!",
     "shareInvalid":"Invalid loadout code.",
-    "shareEmpty":"Your loadout is empty - nothing to share yet."
+    "shareEmpty":"Your loadout is empty - nothing to share yet.",
+    "shareCopyManual":"Couldn't copy automatically - copy the code below manually."
 }
