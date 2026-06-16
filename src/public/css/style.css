@@ -1045,8 +1045,8 @@ li {
     display: flex;
 }
 .sticker-picker-dialog {
-    width: min(1100px, 95vw);
-    max-height: 90vh;
+    width: min(1480px, 97vw);
+    max-height: 94vh;
     display: flex;
     flex-direction: column;
     border-radius: 10px;
@@ -1067,11 +1067,66 @@ li {
 .sticker-filter-bar .form-control {
     min-width: 130px;
 }
+
+/* ---- Free-text search field ----
+   Set apart from the dropdown filters: full-width row, leading magnifier icon
+   and an accent border so it clearly reads as "type to search", not a combobox. */
+.sticker-search-wrap {
+    position: relative;
+}
+.sticker-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--lte-accent);
+    font-size: .95rem;
+    pointer-events: none;
+}
+.sticker-search-input.form-control {
+    padding-left: 40px;
+    font-size: 1rem;
+    font-weight: 500;
+    background-color: rgba(var(--lte-accent-rgb), 0.06);
+    border: 1px solid rgba(var(--lte-accent-rgb), 0.55);
+}
+.sticker-search-input.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.55);
+    font-weight: 400;
+}
+.sticker-search-input.form-control:focus {
+    background-color: rgba(var(--lte-accent-rgb), 0.10);
+    border-color: var(--lte-accent);
+    box-shadow: 0 0 0 0.2rem rgba(var(--lte-accent-rgb), 0.22);
+}
+
 /* Custom type-ahead dropdown for the collection / org / player filters. The
    parent col is .sticker-ta (position:relative); the menu is built in JS and
    only ever holds the matched suggestions (capped), so it stays light. */
 .sticker-ta {
     position: relative;
+}
+/* Chevron caret marks these inputs as dropdown comboboxes (vs the search box). */
+.sticker-ta::after {
+    content: "";
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+}
+/* Slightly recessed look so the comboboxes group together, distinct from search. */
+.sticker-combo.form-control {
+    padding-right: 26px;
+    background-color: rgba(255, 255, 255, 0.04);
+}
+.sticker-combo.form-control:focus {
+    background-color: rgba(255, 255, 255, 0.07);
 }
 .sticker-typeahead-menu {
     display: none;
@@ -1559,4 +1614,196 @@ li {
     color: #fff !important;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
     box-shadow: 0 2px 10px rgba(160, 130, 160, 0.4);
+}
+
+/* ---- Loading skeletons ---------------------------------------------------
+   Shown in #skinsContainer while the multi-MB skins JSON loads. Pure CSS
+   shimmer; the first real render replaces the container so no JS teardown. */
+.skeleton-card {
+    background: var(--lte-secondary-bg, #202020);
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 220px;
+}
+.skeleton-thumb,
+.skeleton-line {
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+    background: #2a2a2a;
+}
+.skeleton-thumb {
+    width: 80%;
+    height: 120px;
+    margin: 0.75rem 0 1rem;
+}
+.skeleton-line {
+    height: 12px;
+    width: 70%;
+    margin-top: 8px;
+    align-self: flex-start;
+}
+.skeleton-line-sm {
+    width: 40%;
+}
+.skeleton-thumb::after,
+.skeleton-line::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
+    animation: skeleton-shimmer 1.3s infinite;
+}
+@keyframes skeleton-shimmer {
+    100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .skeleton-thumb::after,
+    .skeleton-line::after { animation: none; }
+}
+
+/* ---- Toasts --------------------------------------------------------------
+   Fixed bottom-right stack of auto-dismissing confirmation toasts. */
+#toastStack {
+    position: fixed;
+    bottom: 5rem; /* clear of the fixed footer bar */
+    right: 1rem;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    pointer-events: none;
+}
+.wp-toast {
+    display: flex;
+    align-items: center;
+    min-width: 180px;
+    max-width: 320px;
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    background: var(--lte-secondary-bg, #202020);
+    color: var(--lte-white, #eee);
+    font-size: 0.9rem;
+    border-left: 3px solid var(--lte-accent, #FFAC41);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    transform: translateX(20px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.wp-toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+.wp-toast-success i { color: var(--lte-accent, #FFAC41); }
+.wp-toast-error {
+    border-left-color: var(--lte-premium, #FF1E56);
+}
+.wp-toast-error i { color: var(--lte-premium, #FF1E56); }
+@media (max-width: 575px) {
+    #toastStack { left: 1rem; right: 1rem; bottom: 4.5rem; }
+    .wp-toast { max-width: none; }
+}
+
+/* ---- Inline side-menu skin search ---------------------------------------- */
+.sidebar-search {
+    position: relative;
+}
+.sidebar-search > i {
+    position: absolute;
+    left: 0.7rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--lte-accent, #FFAC41);
+    pointer-events: none;
+    font-size: 0.85rem;
+}
+.sidebar-search .form-control {
+    background: var(--lte-side-bg, #1b1b1b);
+    border-color: var(--lte-side-border, #3a3a3a);
+    color: var(--lte-white, #eee);
+    padding-left: 2rem;
+}
+.sidebar-search .form-control::placeholder {
+    color: #8a8a8a;
+}
+.sidebar-search .form-control:focus {
+    background: var(--lte-active-side-bg, #282828);
+    border-color: var(--lte-accent, #FFAC41);
+    box-shadow: 0 0 0 0.18rem rgba(var(--lte-accent-rgb), 0.25);
+}
+
+/* ---- Import / Export loadout modal --------------------------------------- */
+.share-modal {
+    background: var(--lte-primary-bg, #101010);
+    border: 1px solid var(--lte-side-border, #3a3a3a);
+    border-radius: 14px;
+    overflow: hidden;
+}
+.share-modal .modal-header {
+    background: var(--lte-secondary-bg, #202020);
+    border-bottom: 1px solid var(--lte-side-border, #3a3a3a);
+    padding: 0.9rem 1.1rem;
+}
+.share-modal .modal-body {
+    padding: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+.share-card {
+    background: var(--lte-secondary-bg, #202020);
+    border: 1px solid var(--lte-side-border, #3a3a3a);
+    border-radius: 11px;
+    padding: 1rem;
+}
+.share-card-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    margin-bottom: 0.85rem;
+}
+.share-card-icon {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--lte-accent-rgb), 0.14);
+    color: var(--lte-accent, #FFAC41);
+}
+.share-card-head h6 {
+    margin: 0;
+    font-weight: 600;
+    line-height: 1.2;
+}
+.share-textarea {
+    background: var(--lte-side-bg, #1b1b1b);
+    border-color: var(--lte-side-border, #3a3a3a);
+    color: var(--lte-white, #eee);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.82rem;
+    resize: vertical;
+}
+.share-textarea:focus {
+    background: var(--lte-side-bg, #1b1b1b);
+    border-color: var(--lte-accent, #FFAC41);
+    box-shadow: 0 0 0 0.18rem rgba(var(--lte-accent-rgb), 0.2);
+    color: var(--lte-white, #eee);
+}
+.share-copy-btn {
+    font-weight: 600;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.share-copy-btn.copied {
+    background: #3fae6b !important;
+    border-color: #3fae6b !important;
+    color: #fff !important;
+}
+.share-copy-btn:disabled {
+    opacity: 0.5;
 }

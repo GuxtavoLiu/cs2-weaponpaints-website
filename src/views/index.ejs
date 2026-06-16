@@ -86,30 +86,35 @@
                          type to filter or pick from the dropdown built in index.js.
                          They cascade (picking a competition narrows collection/org/
                          player, picking an org narrows players). -->
+                    <!-- The free-text search (type to match any sticker name) is
+                         visually separated from the structured dropdown filters
+                         below: it spans the full width, carries a search icon and
+                         an accent border, so it never reads like the comboboxes. -->
+                    <div class="sticker-search-wrap mb-2">
+                        <i class="fa-solid fa-magnifying-glass sticker-search-icon"></i>
+                        <input type="text" id="stickerSearch" class="form-control sticker-search-input" placeholder="<%= lang.searchStickers %>" oninput="onStickerSearchInput()" data-bs-theme="dark" autocomplete="off">
+                    </div>
                     <div class="row g-2 mb-3 sticker-filter-bar">
-                        <div class="col-12 col-md">
-                            <input type="text" id="stickerSearch" class="form-control" placeholder="<%= lang.searchStickers %>" oninput="onStickerSearchInput()" data-bs-theme="dark" autocomplete="off">
+                        <div class="col-6 col-md-auto sticker-ta">
+                            <input type="text" id="stickerFilterComp" class="form-control sticker-combo" placeholder="<%= lang.allCompetitions %>" oninput="onStickerCompInput()" data-bs-theme="dark" autocomplete="off">
                         </div>
                         <div class="col-6 col-md-auto sticker-ta">
-                            <input type="text" id="stickerFilterComp" class="form-control" placeholder="<%= lang.allCompetitions %>" oninput="onStickerCompInput()" data-bs-theme="dark" autocomplete="off">
+                            <input type="text" id="stickerFilterColl" class="form-control sticker-combo" placeholder="<%= lang.filterColl %>" oninput="onStickerCollInput()" data-bs-theme="dark" autocomplete="off">
                         </div>
                         <div class="col-6 col-md-auto sticker-ta">
-                            <input type="text" id="stickerFilterColl" class="form-control" placeholder="<%= lang.filterColl %>" oninput="onStickerCollInput()" data-bs-theme="dark" autocomplete="off">
+                            <input type="text" id="stickerFilterOrg" class="form-control sticker-combo" placeholder="<%= lang.filterOrg %>" oninput="onStickerOrgInput()" data-bs-theme="dark" autocomplete="off">
                         </div>
                         <div class="col-6 col-md-auto sticker-ta">
-                            <input type="text" id="stickerFilterOrg" class="form-control" placeholder="<%= lang.filterOrg %>" oninput="onStickerOrgInput()" data-bs-theme="dark" autocomplete="off">
+                            <input type="text" id="stickerFilterPlayer" class="form-control sticker-combo" placeholder="<%= lang.filterPlayer %>" oninput="onStickerPlayerInput()" data-bs-theme="dark" autocomplete="off">
                         </div>
                         <div class="col-6 col-md-auto sticker-ta">
-                            <input type="text" id="stickerFilterPlayer" class="form-control" placeholder="<%= lang.filterPlayer %>" oninput="onStickerPlayerInput()" data-bs-theme="dark" autocomplete="off">
+                            <input type="text" id="stickerFilterType" class="form-control sticker-combo" placeholder="<%= lang.allTypes %>" oninput="onStickerTypeInput()" data-bs-theme="dark" autocomplete="off">
                         </div>
                         <div class="col-6 col-md-auto sticker-ta">
-                            <input type="text" id="stickerFilterType" class="form-control" placeholder="<%= lang.allTypes %>" oninput="onStickerTypeInput()" data-bs-theme="dark" autocomplete="off">
+                            <input type="text" id="stickerFilterEffect" class="form-control sticker-combo" placeholder="<%= lang.allEffects %>" oninput="onStickerEffectInput()" data-bs-theme="dark" autocomplete="off">
                         </div>
                         <div class="col-6 col-md-auto sticker-ta">
-                            <input type="text" id="stickerFilterEffect" class="form-control" placeholder="<%= lang.allEffects %>" oninput="onStickerEffectInput()" data-bs-theme="dark" autocomplete="off">
-                        </div>
-                        <div class="col-6 col-md-auto sticker-ta">
-                            <input type="text" id="stickerFilterRarity" class="form-control" placeholder="<%= lang.allRarities %>" oninput="onStickerRarityInput()" data-bs-theme="dark" autocomplete="off">
+                            <input type="text" id="stickerFilterRarity" class="form-control sticker-combo" placeholder="<%= lang.allRarities %>" oninput="onStickerRarityInput()" data-bs-theme="dark" autocomplete="off">
                         </div>
                         <div class="col-6 col-md-auto d-flex align-items-center gap-2">
                             <button type="button" id="stickerFilterReset" class="btn btn-sm btn-outline-secondary" onclick="resetStickerFilters()"><%= lang.resetFilters %></button>
@@ -187,6 +192,55 @@
     </div>
 
 
+    <!-- Import / Export loadout modal -->
+    <div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content share-modal text-light">
+                <div class="modal-header">
+                    <h5 class="modal-title d-flex align-items-center" id="shareModalLabel"><i class="fa-solid fa-right-left me-2 text-accent"></i><%= lang.shareTitle %></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Export: one click copies the code to the clipboard, no code shown. -->
+                    <div class="share-card">
+                        <div class="share-card-head">
+                            <span class="share-card-icon"><i class="fa-solid fa-up-right-from-square"></i></span>
+                            <div>
+                                <h6><%= lang.shareExportHead %></h6>
+                                <small class="text-secondary"><%= lang.shareExportDesc %></small>
+                            </div>
+                        </div>
+                        <button type="button" id="shareCopyBtn" class="btn btn-accent w-100 share-copy-btn" onclick="copyShareCode()">
+                            <i class="fa-solid fa-copy me-2"></i><span id="shareCopyLabel"><%= lang.shareCopy %></span>
+                        </button>
+                    </div>
+
+                    <!-- Import: paste a code and apply it. -->
+                    <div class="share-card">
+                        <div class="share-card-head">
+                            <span class="share-card-icon"><i class="fa-solid fa-file-import"></i></span>
+                            <div>
+                                <h6><%= lang.shareImportHead %></h6>
+                                <small class="text-secondary"><%= lang.shareImportDesc %></small>
+                            </div>
+                        </div>
+                        <textarea id="shareImportCode" class="form-control share-textarea" rows="2" placeholder="<%= lang.shareImportPlaceholder %>" data-bs-theme="dark"></textarea>
+                        <p id="shareStatus" class="m-0 mt-2 small"></p>
+                        <div class="d-flex gap-2 mt-2">
+                            <button type="button" class="btn btn-outline-light flex-shrink-0" onclick="pasteShareCode()">
+                                <i class="fa-solid fa-paste me-2"></i><%= lang.sharePaste %>
+                            </button>
+                            <button type="button" class="btn btn-accent flex-grow-1" id="shareImportBtn" onclick="applyShareCode()">
+                                <i class="fa-solid fa-wand-magic-sparkles me-2"></i><%= lang.shareImport %>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <%- include('./partials/navbar') %>
 
     <% if (typeof user == 'undefined') { %>
@@ -201,6 +255,10 @@
     <% } else { %>
 
     <div class="container text-light mt-3">
+        <div class="sidebar-search mb-2 d-block d-lg-none">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="globalSkinSearchMobile" class="form-control" placeholder="<%= lang.sideMenu.search %>" oninput="runSkinSearch(this.value)" autocomplete="off" data-bs-theme="dark">
+        </div>
         <div class="d-block d-lg-none list-group list-group-horizontal position-relative overflow-auto d-flex justify-content-between bg-nav p-2 rounded">
             <button onclick="showLoadout()" id="sideBtnLoadout" class="btn btn-outline-primary d-flex my-1 mx-1 align-items-center">
                 <i class="fa-solid fa-layer-group ms-1 me-2 my-auto"></i>
@@ -260,6 +318,11 @@
                                     <p class="m-0 mx-auto"><%= lang.sideMenu.loadout %></p>
                             </div>
                         </button>
+
+                        <div class="sidebar-search mb-2">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="globalSkinSearch" class="form-control" placeholder="<%= lang.sideMenu.search %>" oninput="runSkinSearch(this.value)" autocomplete="off" data-bs-theme="dark">
+                        </div>
 
                         <button class="pushable" onclick="showKnives()" data-type="sideBtn" data-btn-type="knives">
                             <span class="shadow"></span>
@@ -380,9 +443,19 @@
             </div>
             <div class="col-12 col-lg-10 mb-5">
                 <div class="row" id="skinsContainer">
-
-                    <h3 class="text-center mt-5"><%= lang.selectCategory %></h3>
-
+                    <%# Skeleton placeholder shown while the (multi-MB) skins JSON
+                        loads. The first real render (showLoadout / a category /
+                        search) overwrites this container's innerHTML, so these
+                        cards disappear on their own with no JS cleanup needed. %>
+                    <% for (let i = 0; i < 12; i++) { %>
+                    <div class="col-6 col-sm-4 col-md-3 p-2 skeleton-cell">
+                        <div class="skeleton-card rounded-3">
+                            <div class="skeleton-thumb"></div>
+                            <div class="skeleton-line skeleton-line-sm"></div>
+                            <div class="skeleton-line"></div>
+                        </div>
+                    </div>
+                    <% } %>
                 </div>
             </div>
         </div>
