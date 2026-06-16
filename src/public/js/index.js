@@ -2,6 +2,18 @@ const socket = io()
 
 let currentWeaponId = ''
 let currentPaintId = ''
+// The weapon_name key and the side the float-edit modal will write to.
+let currentWeaponName = ''
+let modalTeam = 'both'
+
+// Switch the side the open float-edit modal applies to (modal-local; does not
+// touch the global selector / grid behind it).
+window.setModalTeam = (t) => {
+    modalTeam = t === 'both' ? 'both' : Number(t)
+    const host = document.getElementById('modalTeamSelector')
+    if (host) host.querySelectorAll('[data-team]').forEach((b) =>
+        b.classList.toggle('active', b.getAttribute('data-team') === String(t)))
+}
 
 // ---- Toast notifications --------------------------------------------------
 // Lightweight, dependency-free confirmation toasts. The only prior feedback on
@@ -954,6 +966,16 @@ const editModal = (img, weaponName, paintName, weaponId, paintId, stattrakAvaila
     document.getElementById('modalPaint').innerText = paintName
     currentWeaponId = weaponIds[weaponId]
     currentPaintId = paintId
+    currentWeaponName = weaponId
+
+    // Team this edit applies to. Default: the gun's only side if team-exclusive,
+    // else the global selection. Render the modal selector and mark the sides
+    // that already carry this exact paint.
+    const allowedTeams = window.weaponTeams(weaponId)
+    modalTeam = allowedTeams.length === 1 ? allowedTeams[0] : getWriteTeam()
+    const equippedTeams = window.skinTeamsEquipped(currentWeaponId, currentPaintId, weaponId)
+    const teamHost = document.getElementById('modalTeamSelector')
+    if (teamHost) teamHost.innerHTML = window.modalTeamSelectorHtml(weaponId, modalTeam, equippedTeams)
 
     // Stickers only apply to guns, not knives or gloves. Hide the whole sticker
     // section for those so it isn't offered where it can't be used.
@@ -1019,7 +1041,10 @@ const changeParams = () => {
             </div>
         `
 
-    socket.emit('change-params', {steamid: steamid, weaponid: weaponid, paintid: paintid, float: float, pattern: pattern, stattrak: stattrak, stickers: stickers, team: writeTeamForWeapon(getKeyByValue(weaponIds, weaponid))})
+    // Side comes from the modal selector (defaulted in editModal, respecting
+    // team-exclusive guns); fall back to the global selector if unset.
+    const team = modalTeam !== undefined ? modalTeam : writeTeamForWeapon(getKeyByValue(weaponIds, weaponid))
+    socket.emit('change-params', {steamid: steamid, weaponid: weaponid, paintid: paintid, float: float, pattern: pattern, stattrak: stattrak, stickers: stickers, team: team})
 }
 
 const putOnWorkshop = (setId, selected_knife_id, selected_knife, selected_gloves) => {
@@ -1062,6 +1087,9 @@ socket.on('params-changed', (data) => {
     if (data && Array.isArray(data.newSkins) && typeof selectedSkins !== 'undefined') {
         selectedSkins = data.newSkins
     }
+    // Refresh the grid / loadout behind the modal so the per-team highlight
+    // reflects the side just written.
+    window.refreshAfterChange?.()
     document.getElementById('modalButton').innerHTML = langObject.change
     window.showToast?.(langObject.toastSaved || 'Saved')
 })

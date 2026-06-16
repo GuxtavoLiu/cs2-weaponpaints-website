@@ -11,6 +11,12 @@
                 <div class="modal-body bg-color d-flex flex-column text-light">
                     <img id="modalImg" class="mx-auto" src="/images/econ/default_generated/weapon_knife_gut_hy_webs_light_png.png" width="40%">
                     <h5 class="mx-auto"><span id="modalWeapon">Gut knife</span> | <span id="modalPaint">Fade</span></h5>
+                    <!-- Which side this edit applies to. Populated by editModal();
+                         a single locked icon for team-exclusive guns. -->
+                    <div class="d-flex justify-content-center align-items-center gap-2 mb-2">
+                        <small class="text-secondary"><%= lang.applyTo %></small>
+                        <div id="modalTeamSelector" class="d-flex align-items-center gap-2"></div>
+                    </div>
                     <div class="form-outline mx-auto mb-2">
                         <label class="form-label m-0" for="float"><%= lang.float %></label>
                         <input type="range" id="floatSlider" class="slider" min="0" max="1" step="0.000001" value="0.000001" data-bs-theme="dark">

@@ -59,12 +59,13 @@ window.changeKnifeSkinTemplate = (knife, langObject, selectedKnife) => {
     card.classList.add('col-6', 'col-sm-4', 'col-md-3', 'p-2')
 
     let buttonInner = langObject.setWeapon
-    let buttonFunc = `changeKnife(\'${knife.weapon_name}\', ${selectedKnife.steamid})`
+    let buttonFunc = `changeKnife(\'${knife.weapon_name}\')`
 
     // Equipped for the current team selection? ('both': active only when both
     // teams use this knife; T/CT badge when only one does)
     let active = ''
     const st = window.itemTeamState('knife', knife.weapon_name)
+    const cardTeam = window.cardTeamSelectorHtml({ kind: 'knife', weaponName: knife.weapon_name })
     if (st.active) {
         active = 'active-card'
         buttonInner = langObject.changeSkin
@@ -73,7 +74,7 @@ window.changeKnifeSkinTemplate = (knife, langObject, selectedKnife) => {
 
 
     card.innerHTML = `
-    <div class="rounded-3 d-flex flex-column card-common weapon-card ${active} weapon_knife" id="${knife.weapon_name}" data-type="weaponCard" data-btn-type="${knife.weapon_name}">
+    <div class="rounded-3 d-flex flex-column card-common weapon-card has-card-team ${active} weapon_knife" id="${knife.weapon_name}" data-type="weaponCard" data-team-kind="knife" data-btn-type="${knife.weapon_name}">
         ${window.teamBadgeHtml(st)}
         <button id="reset-${knife.weapon_name}" onclick="resetSkin(${knife.weapon_defindex}, '${selectedKnife.steamid}')" style="z-index: 3;" class="revert d-flex justify-content-center align-items-center text-danger rounded-circle">
             <i class="fa-solid fa-rotate-right"></i>
@@ -92,6 +93,7 @@ window.changeKnifeSkinTemplate = (knife, langObject, selectedKnife) => {
             <p class="m-0 text-light weapon-skin-title mx-auto text-center show-hover" style="transform: translateY(170%);">${knife.paint_name}</p>
         </a>
         <button onclick="${buttonFunc}" data-knife="${knife.weapon_name}" class="btn btn-outline-accent-card mt-3 w-100 show-hover" style="z-index: 1; transform: translateY(150%);"><small>${buttonInner}</small></button>
+        ${cardTeam}
     </div>
     `
 
@@ -121,11 +123,12 @@ window.knivesTemplate = (knife, langObject, selectedKnife) => {
     card.classList.add('col-6', 'col-sm-4', 'col-md-3', 'p-2')
 
     let buttonInner = langObject.setWeapon
-    let buttonFunc = `changeKnife(\'${knife.weapon_name}\', ${selectedKnife.steamid})`
+    let buttonFunc = `changeKnife(\'${knife.weapon_name}\')`
 
     // Equipped for the current team selection?
     let active = ''
     const st = window.itemTeamState('knife', knife.weapon_name)
+    const cardTeam = window.cardTeamSelectorHtml({ kind: 'knife', weaponName: knife.weapon_name })
     if (st.active) {
         active = 'active-card'
         buttonInner = langObject.changeSkin
@@ -133,7 +136,7 @@ window.knivesTemplate = (knife, langObject, selectedKnife) => {
     }
 
     card.innerHTML = `
-    <div class="rounded-3 d-flex flex-column card-common weapon-card ${active} weapon_knife" id="${knife.weapon_name}" data-type="weaponCard" data-btn-type="${knife.weapon_name}">
+    <div class="rounded-3 d-flex flex-column card-common weapon-card has-card-team ${active} weapon_knife" id="${knife.weapon_name}" data-type="weaponCard" data-team-kind="knife" data-btn-type="${knife.weapon_name}">
         ${window.teamBadgeHtml(st)}
         <div style="z-index: 3;" class="loading-card d-flex justify-content-center align-items-center w-100 h-100" id="loading-${knife.weapon_name}">
             <div class="spinner-border spinner-border-xl" role="status">
@@ -148,6 +151,7 @@ window.knivesTemplate = (knife, langObject, selectedKnife) => {
             <p class="m-0 text-light weapon-skin-title mx-auto text-center show-hover" style="transform: translateY(170%);">${knife.paint_name}</p>
         </a>
         <button onclick="${buttonFunc}" data-knife="${knife.weapon_name}" class="btn btn-outline-accent-card mt-3 w-100 show-hover" style="z-index: 1; transform: translateY(150%);"><small>${buttonInner}</small></button>
+        ${cardTeam}
     </div>
     `
 
@@ -159,11 +163,12 @@ window.glovesTemplate = (gloves, langObject, selectedGloves) => {
     card.classList.add('col-6', 'col-sm-4', 'col-md-3', 'p-2')
 
     let buttonInner = langObject.setWeapon
-    let buttonFunc = `changeGlove(\'${gloves.weapon_name}\', ${selectedGloves.steamid})`
+    let buttonFunc = `changeGlove(\'${gloves.weapon_name}\')`
 
     // Equipped for the current team selection?
     let active = ''
     const st = window.itemTeamState('gloves', gloves.weapon_defindex)
+    const cardTeam = window.cardTeamSelectorHtml({ kind: 'gloves', weaponName: gloves.weapon_name, weaponid: gloves.weapon_defindex })
     if (st.active) {
         active = 'active-card'
         buttonInner = langObject.changeSkin
@@ -171,7 +176,7 @@ window.glovesTemplate = (gloves, langObject, selectedGloves) => {
     }
 
     card.innerHTML = `
-    <div class="rounded-3 d-flex flex-column card-common weapon-card ${active} weapon_knife" id="${gloves.weapon_name}" data-type="weaponCard" data-btn-type="${gloves.weapon_name}">
+    <div class="rounded-3 d-flex flex-column card-common weapon-card has-card-team ${active} weapon_knife" id="${gloves.weapon_name}" data-type="weaponCard" data-team-kind="gloves" data-defindex="${gloves.weapon_defindex}" data-btn-type="${gloves.weapon_name}">
         ${window.teamBadgeHtml(st)}
         <div style="z-index: 3;" class="loading-card d-flex justify-content-center align-items-center w-100 h-100" id="loading-${gloves.weapon_name}">
             <div class="spinner-border spinner-border-xl" role="status">
@@ -186,6 +191,7 @@ window.glovesTemplate = (gloves, langObject, selectedGloves) => {
             <p class="m-0 text-light weapon-skin-title mx-auto text-center show-hover" style="transform: translateY(170%);">${gloves.paint_name}</p>
         </a>
         <button onclick="${buttonFunc}" data-knife="${gloves.weapon_name}" class="btn btn-outline-accent-card mt-3 w-100 show-hover" style="z-index: 1; transform: translateY(150%);"><small>${buttonInner}</small></button>
+        ${cardTeam}
     </div>
     `
 
@@ -197,11 +203,12 @@ window.changeGlovesSkinTemplate = (gloves, langObject, selectedGloves) => {
     card.classList.add('col-6', 'col-sm-4', 'col-md-3', 'p-2')
 
     let buttonInner = langObject.setWeapon
-    let buttonFunc = `changeGlove(\'${gloves.weapon_name}\', ${selectedGloves.steamid})`
+    let buttonFunc = `changeGlove(\'${gloves.weapon_name}\')`
 
     // Equipped for the current team selection?
     let active = ''
     const st = window.itemTeamState('gloves', gloves.weapon_defindex)
+    const cardTeam = window.cardTeamSelectorHtml({ kind: 'gloves', weaponName: gloves.weapon_name, weaponid: gloves.weapon_defindex })
     if (st.active) {
         active = 'active-card'
         buttonInner = langObject.changeSkin
@@ -210,7 +217,7 @@ window.changeGlovesSkinTemplate = (gloves, langObject, selectedGloves) => {
 
 
     card.innerHTML = `
-    <div class="rounded-3 d-flex flex-column card-common weapon-card ${active} weapon_knife" id="${gloves.weapon_name}" data-type="weaponCard" data-btn-type="${gloves.weapon_name}">
+    <div class="rounded-3 d-flex flex-column card-common weapon-card has-card-team ${active} weapon_knife" id="${gloves.weapon_name}" data-type="weaponCard" data-team-kind="gloves" data-defindex="${gloves.weapon_defindex}" data-btn-type="${gloves.weapon_name}">
         ${window.teamBadgeHtml(st)}
         <button id="reset-${gloves.weapon_name}" onclick="resetSkin(${gloves.weapon_defindex}, '${selectedGloves.steamid}')" style="z-index: 3;" class="revert d-flex justify-content-center align-items-center text-danger rounded-circle">
             <i class="fa-solid fa-rotate-right"></i>
@@ -229,6 +236,7 @@ window.changeGlovesSkinTemplate = (gloves, langObject, selectedGloves) => {
             <p class="m-0 text-light weapon-skin-title mx-auto text-center show-hover" style="transform: translateY(170%);">${gloves.paint_name}</p>
         </a>
         <button onclick="${buttonFunc}" data-knife="${gloves.weapon_name}" class="btn btn-outline-accent-card mt-3 w-100 show-hover" style="z-index: 1; transform: translateY(150%);"><small>${buttonInner}</small></button>
+        ${cardTeam}
     </div>
     `
 

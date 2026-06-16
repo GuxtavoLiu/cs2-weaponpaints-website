@@ -12,7 +12,7 @@ const TEAM_T = 2;
 const TEAM_CT = 3;
 const TEAM_LABEL = { [TEAM_T]: "T", [TEAM_CT]: "CT" };
 // Official team patch icons (cswikia); shown instead of the T/CT text.
-const TEAM_ICON = { T: "icons/team_t.png", CT: "icons/team_ct.png" };
+const TEAM_ICON = { T: "icons/team_t.png", CT: "icons/team_ct.png", Both: "icons/team_both.png" };
 const teamIconImg = (label) =>
   `<img src="${TEAM_ICON[label]}" alt="${label}" title="${label}">`;
 
@@ -65,7 +65,7 @@ window.teamSelectorHtml = () => {
   const current = getCurrentTeam();
   const btn = (team, label, title) =>
     `<button type="button" class="btn btn-sm btn-outline-primary${current === team ? " active" : ""}" data-team="${team}" onclick="setCurrentTeam('${team}')" title="${title}"><small>${label}</small></button>`;
-  return `<div class="btn-group team-selector" role="group">${btn("both", L.teamBoth || "Both", L.teamBoth || "Both")}${btn("2", teamIconImg("T"), L.teamT || "T")}${btn("3", teamIconImg("CT"), L.teamCT || "CT")}</div>`;
+  return `<div class="btn-group team-selector" role="group">${btn("both", teamIconImg("Both"), L.teamBoth || "Both")}${btn("2", teamIconImg("T"), L.teamT || "T")}${btn("3", teamIconImg("CT"), L.teamCT || "CT")}</div>`;
 };
 
 window.setCurrentTeam = (t) => {
@@ -73,6 +73,39 @@ window.setCurrentTeam = (t) => {
   window.refreshTeamSelectorUI();
   window.syncDerivedSelection();
   document.dispatchEvent(new CustomEvent("teamchange"));
+};
+
+// Team selector for the float-edit modal. Unlike teamSelectorHtml it drives a
+// modal-local choice (setModalTeam) instead of the global selector, so it never
+// re-renders the grid behind the open modal. `selected` is the current modal
+// team ('both'|2|3); `equipped` is the list of sides that already carry this
+// exact paint (a marker dot is shown on those segments). Team-exclusive guns
+// render a single locked icon.
+window.modalTeamSelectorHtml = (weaponName, selected, equipped) => {
+  const L = typeof langObject !== "undefined" ? langObject : {};
+  const teams = weaponTeams(weaponName);
+  const has = (t) => Array.isArray(equipped) && equipped.includes(t);
+  if (teams.length === 1) {
+    const label = TEAM_LABEL[teams[0]];
+    return `<span class="modal-team-locked">${teamIconImg(label)}<small>${
+      label === "CT" ? L.teamCT || "CT" : L.teamT || "T"
+    }</small></span>`;
+  }
+  const seg = (team, inner, dot) =>
+    `<button type="button" class="btn btn-sm btn-outline-primary${
+      String(selected) === String(team) ? " active" : ""
+    }" data-team="${team}" onclick="setModalTeam('${team}')">${inner}${
+      dot ? '<span class="modal-team-dot"></span>' : ""
+    }</button>`;
+  return `<div class="btn-group team-selector" role="group">${seg(
+    "both",
+    teamIconImg("Both"),
+    has(TEAM_T) && has(TEAM_CT)
+  )}${seg("2", teamIconImg("T"), has(TEAM_T))}${seg(
+    "3",
+    teamIconImg("CT"),
+    has(TEAM_CT)
+  )}</div>`;
 };
 
 // Teams to look at for display contexts, in priority order.
@@ -108,27 +141,29 @@ const teamMatchState = (matches) => {
   return { active: false, badge: null };
 };
 
-// Equip state of a knife/glove/music value against loadoutByTeam.
-// kind: 'knife' (value = weapon_name), 'gloves' (= weapon_defindex),
+// The team(s) (subset of [2,3]) that currently have a knife/glove/music value
+// equipped. kind: 'knife' (value = weapon_name), 'gloves' (= weapon_defindex),
 // 'music' (= music_id).
-window.itemTeamState = (kind, value) => {
-  if (typeof loadoutByTeam === "undefined") return { active: false, badge: null };
+window.itemTeamsEquipped = (kind, value) => {
+  if (typeof loadoutByTeam === "undefined") return [];
   const field = { knife: "knife", gloves: "weapon_defindex", music: "music_id" }[kind];
-  const matches = [TEAM_T, TEAM_CT].filter((team) => {
+  return [TEAM_T, TEAM_CT].filter((team) => {
     const row = loadoutByTeam[kind][team];
     return row && row[field] == value;
   });
-  return teamMatchState(matches);
 };
 
-// Equip state of a weapon skin (defindex + paint) against selectedSkins.
-// weaponName (optional) lets team-exclusive guns ignore the team concept:
-// only their own side's row counts and they never show a divergence badge.
-window.skinTeamState = (defindex, paintid, weaponName) => {
-  if (typeof selectedSkins === "undefined" || !Array.isArray(selectedSkins))
-    return { active: false, badge: null };
+// Equip state of a knife/glove/music value against loadoutByTeam.
+window.itemTeamState = (kind, value) =>
+  teamMatchState(window.itemTeamsEquipped(kind, value));
+
+// The team(s) (subset of the weapon's allowed sides) that currently have this
+// exact skin (defindex + paint) equipped. weaponName (optional) restricts to a
+// team-exclusive gun's own side.
+window.skinTeamsEquipped = (defindex, paintid, weaponName) => {
+  if (typeof selectedSkins === "undefined" || !Array.isArray(selectedSkins)) return [];
   const allowed = weaponName ? weaponTeams(weaponName) : [TEAM_T, TEAM_CT];
-  const matches = allowed.filter((team) =>
+  return allowed.filter((team) =>
     selectedSkins.some(
       (s) =>
         s.weapon_team == team &&
@@ -136,6 +171,13 @@ window.skinTeamState = (defindex, paintid, weaponName) => {
         (s.weapon_defindex == defindex || s.model_idx == defindex)
     )
   );
+};
+
+// Equip state of a weapon skin (defindex + paint) against selectedSkins.
+// Team-exclusive guns never show a divergence badge (only their own side counts).
+window.skinTeamState = (defindex, paintid, weaponName) => {
+  const allowed = weaponName ? weaponTeams(weaponName) : [TEAM_T, TEAM_CT];
+  const matches = window.skinTeamsEquipped(defindex, paintid, weaponName);
   if (allowed.length === 1) {
     return { active: matches.length > 0, badge: null };
   }

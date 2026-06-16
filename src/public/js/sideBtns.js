@@ -274,32 +274,35 @@ sideBtns.forEach((btn) => {
   }
 });
 
-window.changeKnife = (weaponid) => {
+// team (optional): explicit 'both' | 2 | 3 from a per-card icon. When omitted,
+// falls back to the global selector (writeTeamForWeapon / getWriteTeam), so the
+// card-body quick-equip path is unchanged.
+window.changeKnife = (weaponid, team) => {
   socket.emit("change-knife", {
     weaponid: weaponid,
     steamUserId: user.id,
-    team: getWriteTeam(),
+    team: team !== undefined ? team : getWriteTeam(),
   });
   document.getElementById(`loading-${weaponid}`).style.visibility = "visible";
   document.getElementById(`loading-${weaponid}`).style.opacity = 1;
 };
 
-window.changeGlove = (weaponid) => {
+window.changeGlove = (weaponid, team) => {
   socket.emit("change-glove", {
     weaponid: weaponIds[weaponid],
     steamUserId: user.id,
-    team: getWriteTeam(),
+    team: team !== undefined ? team : getWriteTeam(),
   });
   document.getElementById(`loading-${weaponid}`).style.visibility = "visible";
   document.getElementById(`loading-${weaponid}`).style.opacity = 1;
 };
 
-window.changeSkin = (steamid, weaponid, paintid) => {
+window.changeSkin = (steamid, weaponid, paintid, team) => {
   socket.emit("change-skin", {
     steamid: steamid,
     weaponid: weaponid,
     paintid: paintid,
-    team: writeTeamForWeapon(getKeyByValue(weaponIds, weaponid)),
+    team: team !== undefined ? team : writeTeamForWeapon(getKeyByValue(weaponIds, weaponid)),
   });
   document.getElementById(`loading-${weaponid}-${paintid}`).style.visibility =
     "visible";
@@ -353,23 +356,13 @@ socket.on("skin-reset", (data) => {
       (element) => element.weapon_defindex != data.weaponid
     );
   }
+  window.refreshAfterChange();
   window.showToast?.(langObject.toastReset || "Skin reset");
 });
 
 socket.on("knife-changed", (data) => {
-  let elms = document.getElementsByClassName("weapon_knife");
-
-  for (var i = 0; i < elms.length; i++) {
-    elms[i].classList.remove("active-card");
-    const button = elms[i].querySelectorAll("button");
-    button[
-      button.length - 1
-    ].innerHTML = `<small>${langObject.setWeapon}</small>`;
-    button[button.length - 1].onclick = function () {
-      changeKnife(`${button[button.length - 1].getAttribute("data-knife")}`);
-    };
-  }
-
+  // Write the equipped knife for the team(s) this change covered, leaving the
+  // other side's knife untouched (per-team divergence).
   (data.teams || [2, 3]).forEach((t) => {
     loadoutByTeam.knife[t] = {
       ...(loadoutByTeam.knife[t] || {}),
@@ -379,37 +372,16 @@ socket.on("knife-changed", (data) => {
     };
   });
   syncDerivedSelection();
-  // Divergence badges only render in 'both' mode, and a 'both' equip leaves no
-  // diverging knife behind, so clearing them all is exact.
-  document.querySelectorAll("#skinsContainer .team-badge").forEach((b) => b.remove());
-
-  document.getElementById(data.knife).classList.add("active-card");
-  const button = document.getElementById(data.knife).querySelectorAll("button");
-  button[
-    button.length - 1
-  ].innerHTML = `<small>${langObject.changeSkin}</small>`;
-  button[button.length - 1].onclick = function () {
-    knifeSkins(`${data.knife}`);
-  };
-  document.getElementById(`loading-${data.knife}`).style.opacity = 0;
-  document.getElementById(`loading-${data.knife}`).style.visibility = "hidden";
+  window.refreshAfterChange();
+  const load = document.getElementById(`loading-${data.knife}`);
+  if (load) {
+    load.style.opacity = 0;
+    load.style.visibility = "hidden";
+  }
   window.showToast?.(langObject.toastSaved || "Saved");
 });
 
 socket.on("glove-changed", (data) => {
-  let elms = document.getElementsByClassName("weapon_knife");
-
-  for (var i = 0; i < elms.length; i++) {
-    elms[i].classList.remove("active-card");
-    const button = elms[i].querySelectorAll("button");
-    button[
-      button.length - 1
-    ].innerHTML = `<small>${langObject.setWeapon}</small>`;
-    button[button.length - 1].onclick = function () {
-      changeGlove(`${button[button.length - 1].getAttribute("data-knife")}`);
-    };
-  }
-
   const gloves = getKeyByValue(weaponIds, data.knife);
 
   (data.teams || [2, 3]).forEach((t) => {
@@ -421,45 +393,23 @@ socket.on("glove-changed", (data) => {
     };
   });
   syncDerivedSelection();
-  document.querySelectorAll("#skinsContainer .team-badge").forEach((b) => b.remove());
-
-  document.getElementById(gloves).classList.add("active-card");
-  const button = document.getElementById(gloves).querySelectorAll("button");
-  button[
-    button.length - 1
-  ].innerHTML = `<small>${langObject.changeSkin}</small>`;
-  button[button.length - 1].onclick = function () {
-    knifeSkins(`${gloves}`);
-  };
-  document.getElementById(`loading-${gloves}`).style.opacity = 0;
-  document.getElementById(`loading-${gloves}`).style.visibility = "hidden";
+  window.refreshAfterChange();
+  const load = gloves && document.getElementById(`loading-${gloves}`);
+  if (load) {
+    load.style.opacity = 0;
+    load.style.visibility = "hidden";
+  }
   window.showToast?.(langObject.toastSaved || "Saved");
 });
 
 socket.on("skin-changed", (data) => {
-  let elms = document.getElementsByClassName("weapon-card");
-
-  for (var i = 0; i < elms.length; i++) {
-    elms[i].classList.remove("active-card");
-  }
-
   selectedSkins = data.newSkins;
-
-  // In 'both' mode the equip covered both teams, so this weapon can't have a
-  // diverging paint anymore; drop its badges (other weapons keep theirs).
-  document
-    .querySelectorAll(`[id^="weapon-${data.weaponid}-"] .team-badge`)
-    .forEach((b) => b.remove());
-
-  document
-    .getElementById(`weapon-${data.weaponid}-${data.paintid}`)
-    .classList.add("active-card");
-  document.getElementById(
-    `loading-${data.weaponid}-${data.paintid}`
-  ).style.opacity = 0;
-  document.getElementById(
-    `loading-${data.weaponid}-${data.paintid}`
-  ).style.visibility = "hidden";
+  window.refreshAfterChange();
+  const load = document.getElementById(`loading-${data.weaponid}-${data.paintid}`);
+  if (load) {
+    load.style.opacity = 0;
+    load.style.visibility = "hidden";
+  }
   window.showToast?.(langObject.toastSaved || "Saved");
 });
 
@@ -587,8 +537,19 @@ const buildSkinCard = (element) => {
   let card = document.createElement("div");
   card.classList.add("col-6", "col-sm-4", "col-md-3", "p-2");
 
+  // Minimalist per-card CT/T selector pinned to the card bottom. FRONTEND ONLY
+  // for now: clicking just moves the highlight within the card (mockCardTeam),
+  // it doesn't equip per team yet. Wiring it to a real per-team equip is the
+  // remaining backend step. Team-exclusive guns show a static locked badge.
+  const cardTeam = cardTeamSelectorHtml({
+    kind: "skin",
+    weaponName: element.weapon.id,
+    weaponid: weaponIds[element.weapon.id],
+    paintid: element.paint_index,
+  });
+
   card.innerHTML = `
-                <div onclick="changeSkin(\'${user.id}\', \'${weaponIds[element.weapon.id]}\', ${element.paint_index})" id="weapon-${weaponIds[element.weapon.id]}-${element.paint_index}" class="weapon-card rounded-3 d-flex flex-column ${active} ${bgColor} contrast-reset pb-2" data-type="skinCard" data-btn-type="${weaponIds[element.weapon.id]}-${element.paint_index}">
+                <div onclick="changeSkin(\'${user.id}\', \'${weaponIds[element.weapon.id]}\', ${element.paint_index})" id="weapon-${weaponIds[element.weapon.id]}-${element.paint_index}" class="weapon-card has-card-team rounded-3 d-flex flex-column ${active} ${bgColor} contrast-reset pb-2" data-type="skinCard" data-btn-type="${weaponIds[element.weapon.id]}-${element.paint_index}">
                     ${badge}
                     <div style="z-index: 3;" class="locked-card d-flex flex-column justify-content-center align-items-center w-100 h-100" id="locked-${weaponIds[element.weapon.id]}-${element.paint_index}">
                         <i class="fa-solid fa-lock"></i>
@@ -620,15 +581,144 @@ const buildSkinCard = (element) => {
                     <h5 class="weapon-skin-title text-roboto ms-3">
                         ${element.pattern.name} ${phase}
                     </h5>
+
+                    ${cardTeam}
                 </div>
             `;
 
   return card;
 };
 
+// Build the per-card team control: bare Both / T / CT icons, each highlighted
+// when that side currently has THIS item equipped (real loadout state, not the
+// global mode). Clicking a side equips this item for it; Both equips both.
+// Team-exclusive guns (AK/Glock = T, M4/USP = CT) show their single icon (lit
+// when equipped), letting the card-body click handle the equip.
+// descriptor: { kind:'skin'|'knife'|'gloves', weaponName, weaponid, paintid }
+const cardTeamSelectorHtml = (descriptor) => {
+  const { kind, weaponName } = descriptor;
+  const teams =
+    typeof window.weaponTeams === "function" ? window.weaponTeams(weaponName) : [2, 3];
+
+  // Sides that currently have this exact item equipped.
+  let equipped = [];
+  if (kind === "skin" && typeof window.skinTeamsEquipped === "function") {
+    equipped = window.skinTeamsEquipped(descriptor.weaponid, descriptor.paintid, weaponName);
+  } else if (kind === "knife" && typeof window.itemTeamsEquipped === "function") {
+    equipped = window.itemTeamsEquipped("knife", weaponName);
+  } else if (kind === "gloves" && typeof window.itemTeamsEquipped === "function") {
+    equipped = window.itemTeamsEquipped("gloves", descriptor.weaponid);
+  }
+
+  // The equip call wired to a segment for this card's kind.
+  const click = (team) => {
+    if (kind === "skin")
+      return `cardEquipTeam(event, '${team}', 'skin', ${descriptor.weaponid}, ${descriptor.paintid})`;
+    if (kind === "knife")
+      return `cardEquipTeam(event, '${team}', 'knife', '${weaponName}')`;
+    return `cardEquipTeam(event, '${team}', 'gloves', '${weaponName}')`;
+  };
+
+  if (teams.length === 1) {
+    const isCT = teams[0] === 3;
+    const icon = isCT ? "icons/team_ct.png" : "icons/team_t.png";
+    const label = isCT ? "CT" : "T";
+    const on = equipped.includes(teams[0]) ? " active" : "";
+    return `<div class="card-team card-team-locked${on}"><img src="${icon}" alt="${label}" title="${label}"></div>`;
+  }
+
+  const hasT = equipped.includes(2);
+  const hasCT = equipped.includes(3);
+  const seg = (team, icon, label, on) =>
+    `<button type="button" class="card-team-btn${on ? " active" : ""}" data-team="${team}" title="${label}" onclick="${click(team)}"><img src="${icon}" alt="${label}"></button>`;
+  return `<div class="card-team" role="group">
+      ${seg("both", "icons/team_both.png", "Both", hasT && hasCT)}
+      ${seg("2", "icons/team_t.png", "T", hasT)}
+      ${seg("3", "icons/team_ct.png", "CT", hasCT)}
+    </div>`;
+};
+
+// Equip the card's item for a side from a per-card icon. team: 'both' | '2' |
+// '3'. Stops the click from bubbling to the card-body equip. The *-changed
+// socket handlers re-render the open view, so highlights refresh from state.
+window.cardEquipTeam = (ev, team, kind, p1, p2) => {
+  ev.stopPropagation();
+  const t = team === "both" ? "both" : Number(team);
+  if (kind === "skin") window.changeSkin(user.id, p1, p2, t);
+  else if (kind === "knife") window.changeKnife(p1, t);
+  else if (kind === "gloves") window.changeGlove(p1, t);
+};
+
 // Exposed so the global search view (showSearch) can reuse the exact same card
 // (rarity, team badge, gear/editModal, lazy image) as the per-type grids.
 window.buildSkinCard = buildSkinCard;
+
+// Exposed so the knife/glove model templates (templates.js) can render the same
+// per-card team selector.
+window.cardTeamSelectorHtml = cardTeamSelectorHtml;
+
+// Recompute every rendered card's team selector, active outline and divergence
+// badge from the canonical state (selectedSkins / loadoutByTeam), in place -
+// so a per-team equip refreshes the grid WITHOUT a full re-render (keeps scroll,
+// search and sort). Replaces the old single-item DOM surgery, which wrongly
+// cleared the other side's equipped state. Knife/glove model cards also get
+// their fast-select button (Set weapon / Change skin) refreshed.
+window.refreshCardTeams = () => {
+  document.querySelectorAll(".weapon-card").forEach((card) => {
+    const host = card.querySelector(".card-team");
+    if (!host) return;
+
+    let descriptor, st;
+    if (card.dataset.type === "skinCard") {
+      const dash = card.dataset.btnType.lastIndexOf("-");
+      const defindex = Number(card.dataset.btnType.slice(0, dash));
+      const paint = Number(card.dataset.btnType.slice(dash + 1));
+      const name = getKeyByValue(weaponIds, defindex);
+      descriptor = { kind: "skin", weaponName: name, weaponid: defindex, paintid: paint };
+      st = window.skinTeamState(defindex, paint, name);
+    } else if (card.dataset.teamKind === "gloves") {
+      const defindex = Number(card.dataset.defindex);
+      descriptor = { kind: "gloves", weaponName: card.id, weaponid: defindex };
+      st = window.itemTeamState("gloves", defindex);
+    } else if (card.dataset.teamKind === "knife") {
+      descriptor = { kind: "knife", weaponName: card.id };
+      st = window.itemTeamState("knife", card.id);
+    } else {
+      return;
+    }
+
+    host.outerHTML = window.cardTeamSelectorHtml(descriptor);
+    card.classList.toggle("active-card", !!(st && st.active));
+    card.querySelectorAll(".team-badge").forEach((b) => b.remove());
+    if (st && st.badge) card.insertAdjacentHTML("afterbegin", window.teamBadgeHtml(st));
+
+    // Knife/glove model cards: equipped -> "Change skin" (open its skins),
+    // otherwise -> "Set weapon" (fast-select equip).
+    if (descriptor.kind === "knife" || descriptor.kind === "gloves") {
+      const equipped = !!(st && st.active);
+      const fn = equipped
+        ? `knifeSkins('${card.id}')`
+        : descriptor.kind === "knife"
+        ? `changeKnife('${card.id}')`
+        : `changeGlove('${card.id}')`;
+      const label = equipped ? langObject.changeSkin : langObject.setWeapon;
+      const btn = card.querySelector(".btn-outline-accent-card");
+      if (btn) {
+        btn.setAttribute("onclick", fn);
+        btn.innerHTML = `<small>${label}</small>`;
+      }
+      const a = card.querySelector("a[onclick]");
+      if (a) a.setAttribute("onclick", fn);
+    }
+  });
+};
+
+// After an equip/reset: refresh the loadout overview (its CT|T halves) when it's
+// the open view, otherwise refresh the grid cards in place.
+window.refreshAfterChange = () => {
+  if (window.currentViewRender === window.showLoadout) window.currentViewRender();
+  else window.refreshCardTeams();
+};
 
 // ---- Global skin search --------------------------------------------------
 // Driven by the inline search field in the side menu (no separate view to open;
