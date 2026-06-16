@@ -47,6 +47,7 @@ const sideBtnHandler = (activeBtn) => {
   // remove active background
   let allBtns = [
     "sideBtnLoadout",
+    "sideBtnSearch",
     "sideBtnKnives",
     "sideBtnGloves",
     "sideBtnMusics",
@@ -352,6 +353,7 @@ socket.on("skin-reset", (data) => {
       (element) => element.weapon_defindex != data.weaponid
     );
   }
+  window.showToast?.(langObject.toastReset || "Skin reset");
 });
 
 socket.on("knife-changed", (data) => {
@@ -391,6 +393,7 @@ socket.on("knife-changed", (data) => {
   };
   document.getElementById(`loading-${data.knife}`).style.opacity = 0;
   document.getElementById(`loading-${data.knife}`).style.visibility = "hidden";
+  window.showToast?.(langObject.toastSaved || "Saved");
 });
 
 socket.on("glove-changed", (data) => {
@@ -430,6 +433,7 @@ socket.on("glove-changed", (data) => {
   };
   document.getElementById(`loading-${gloves}`).style.opacity = 0;
   document.getElementById(`loading-${gloves}`).style.visibility = "hidden";
+  window.showToast?.(langObject.toastSaved || "Saved");
 });
 
 socket.on("skin-changed", (data) => {
@@ -456,6 +460,7 @@ socket.on("skin-changed", (data) => {
   document.getElementById(
     `loading-${data.weaponid}-${data.paintid}`
   ).style.visibility = "hidden";
+  window.showToast?.(langObject.toastSaved || "Saved");
 });
 
 socket.on("agent-changed", (data) => {
@@ -473,6 +478,7 @@ socket.on("agent-changed", (data) => {
   document.getElementById(`loading-${data.currentAgent}`).style.opacity = 0;
   document.getElementById(`loading-${data.currentAgent}`).style.visibility =
     "hidden";
+  window.showToast?.(langObject.toastSaved || "Saved");
 });
 
 socket.on("music-changed", (data) => {
@@ -499,6 +505,7 @@ socket.on("music-changed", (data) => {
   document.getElementById(`loading-${data.music}`).style.opacity = 0;
   document.getElementById(`loading-${data.music}`).style.visibility =
     "hidden";
+  window.showToast?.(langObject.toastSaved || "Saved");
 });
 
 // Maps a weapon_type from defaultsObject to the side-menu function that renders
@@ -617,6 +624,99 @@ const buildSkinCard = (element) => {
             `;
 
   return card;
+};
+
+// Exposed so the global search view (showSearch) can reuse the exact same card
+// (rarity, team badge, gear/editModal, lazy image) as the per-type grids.
+window.buildSkinCard = buildSkinCard;
+
+// ---- Global skin search --------------------------------------------------
+// Driven by the inline search field in the side menu (no separate view to open;
+// you just type). Unlike the toolbar search (which only filters the cards
+// already rendered for one category), this searches the ENTIRE skinsObject by
+// name across every weapon, e.g. "ak redline" or "karambit fade". The result
+// set is capped so a broad query (e.g. a single letter) can't render thousands
+// of image cards. The input lives in the side menu (outside #skinsContainer),
+// so re-rendering the grid never disturbs the field's focus or text.
+const SEARCH_RESULT_CAP = 300;
+let searchQuery = "";
+let searchTimer = null;
+
+// Render the search header (team selector + card size + count) and the capped
+// result cards into #skinsContainer. Registered as currentViewRender so the
+// team selector re-renders results (with fresh badges) on team change.
+const renderSearchView = () => {
+  window.currentViewRender = renderSearchView;
+  // No side button is "active" for search; clear the others' highlight.
+  sideBtnHandler("sideBtnSearch");
+
+  const container = document.getElementById("skinsContainer");
+  if (!container) return;
+  const L = typeof langObject !== "undefined" ? langObject : {};
+  container.innerHTML = "";
+
+  const header = document.createElement("div");
+  header.className = "col-12 d-flex flex-wrap align-items-center gap-2 mb-3 search-header";
+  header.innerHTML = `
+    <h5 class="m-0 me-2 d-flex align-items-center"><i class="fa-solid fa-magnifying-glass me-2 text-secondary"></i><span id="searchTermLabel"></span></h5>
+    <button type="button" id="cardSizeBtn" class="btn btn-outline-primary btn-sm" onclick="cycleCardSize()" title="${L.cardSize || "Card size"}"><i class="fa-solid fa-table-cells"></i></button>
+    <div class="ms-auto d-flex align-items-center gap-2">
+      ${window.teamSelectorHtml()}
+      <small class="text-secondary" id="skinsCount"></small>
+    </div>
+  `;
+  container.appendChild(header);
+  // textContent (not innerHTML) so a query can't inject markup.
+  const label = document.getElementById("searchTermLabel");
+  if (label) label.textContent = searchQuery.trim();
+
+  const tokens = searchQuery.toLowerCase().split(/\s+/).filter(Boolean);
+  let shown = 0;
+  for (let i = 0; i < skinsObject.length && shown < SEARCH_RESULT_CAP; i++) {
+    const el = skinsObject[i];
+    // Skip anything we can't map to a defindex (the card's click/equip needs it).
+    if (typeof weaponIds[el.weapon.id] === "undefined") continue;
+    const hay = `${el.weapon.name} ${el.pattern.name}`.toLowerCase();
+    if (!tokens.every((t) => hay.includes(t))) continue;
+    const card = window.buildSkinCard(el);
+    card.classList.add("search-result-cell");
+    container.appendChild(card);
+    shown++;
+  }
+
+  if (!shown) {
+    const empty = document.createElement("div");
+    empty.className = "col-12 text-center text-secondary mt-5 search-empty";
+    empty.innerHTML = `<i class="fa-solid fa-magnifying-glass fa-2x mb-3 d-block"></i>${L.searchNoResults || "No skins match your search."}`;
+    container.appendChild(empty);
+  }
+  const countEl = document.getElementById("skinsCount");
+  if (countEl) countEl.innerText = shown >= SEARCH_RESULT_CAP ? `${SEARCH_RESULT_CAP}+` : String(shown);
+};
+
+// Called on every keystroke of the side-menu search field(s). Debounced.
+// Empty query returns to the loadout home so clearing the box feels natural.
+window.runSkinSearch = (value) => {
+  searchQuery = value || "";
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    if (!searchQuery.trim()) {
+      if (typeof window.showLoadout === "function") window.showLoadout();
+      return;
+    }
+    renderSearchView();
+  }, 140);
+};
+
+// Focus the (visible) side-menu search field. Used by the "/" keyboard shortcut.
+window.showSearch = () => {
+  const input =
+    document.getElementById("globalSkinSearch") ||
+    document.getElementById("globalSkinSearchMobile");
+  if (input) {
+    input.focus();
+    input.select();
+  }
 };
 
 // "Show all" gloves: every glove skin from every glove type in a single grid,

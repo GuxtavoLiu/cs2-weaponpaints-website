@@ -4,7 +4,7 @@ const session = require("express-session");
 const FileStore = require("session-file-store")(session);
 const passportSteam = require("passport-steam");
 const SteamStrategy = passportSteam.Strategy;
-const mysql = require("mysql");
+const mysql = require("mysql2");
 const path = require("path");
 const { decodeInspectLink } = require("./inspectLink");
 
@@ -68,26 +68,26 @@ if (config.HOST == "localhost" || config.HOST == "127.0.0.1") {
   realm = `${config.PROTOCOL}://${config.HOST}:${config.PORT}${config.SUBDIR}`;
 }
 
-// connect to db
-const connection = mysql.createConnection({
+// connect to db. A promise pool replaces the old single callback connection:
+// it manages reconnection itself (no manual heartbeat needed) and lets the
+// handlers below use async/await instead of nested callbacks.
+const pool = mysql.createPool({
   host: config.DB.DB_HOST,
   user: config.DB.DB_USER,
   database: config.DB.DB_DB,
   password: config.DB.DB_PASS,
   port: config.DB.DB_PORT,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000,
 });
-connection.connect(function (err) {
-  if (err) {
-    return console.error("Error: " + err.message);
-  } else {
-    console.log("Connected to MySQL!");
-  }
-});
-
-// heartbeat for db
-setInterval(() => {
-  connection.query("SELECT 1", (err, res, fields) => {});
-}, 10000);
+const db = pool.promise();
+// Pools connect lazily; probe once at startup so a bad config is obvious.
+db.query("SELECT 1")
+  .then(() => console.log("Connected to MySQL!"))
+  .catch((err) => console.error("Error: " + err.message));
 
 // generate random secret if not set
 randomSecret = () => {
@@ -139,73 +139,46 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.get(config.SUBDIR, (req, res) => {
-  if (typeof req.user != "undefined") {
-    try {
-      connection.query(
-        "SELECT * FROM wp_player_knife WHERE steamid = ?",
-        [req.user.id],
-        (err, results, fields) => {
-          connection.query(
-            "SELECT * FROM wp_player_skins WHERE steamid = ?",
-            [req.user.id],
-            (err, results2, fields) => {
-              connection.query(
-                "SELECT * FROM wp_player_agents WHERE steamid = ?",
-                [req.user.id],
-                (err, results3, fields) => {
-                  connection.query(
-                    "SELECT * FROM wp_player_music WHERE steamid = ?",
-                    [req.user.id],
-                    (err, results4, fields) => {
-                      connection.query(
-                        "SELECT * FROM wp_player_gloves WHERE steamid = ?",
-                        [req.user.id],
-                        (err, results5, fields) => {
-                          results = results !=undefined ? results : [];
-                          results2 = results2 !=undefined ? results2 : [];
-                          results3 = results3 !=undefined ? results3 : [];
-                          results4 = results4 !=undefined ? results4 : [];
-                          results5 = results5 !=undefined ? results5 : [];
-                          // knife/musics/gloves: full row arrays (one row per
-                          // weapon_team) so the client can keep per-team state.
-                          res.render("index", {
-                            config: config,
-                            session: req.session,
-                            user: req.user,
-                            knife: results,
-                            skins: results2,
-                            agents: results3[0],
-                            musics: results4,
-                            gloves: results5,
-                            lang: langs[pickLangCode(req)],
-                            langCode: pickLangCode(req),
-                            availableLangs: availableLangs,
-                            subdir: config.SUBDIR,
-                          });
-                        }
-                      );
-                    }
-                  );
-                }
-              );
-            }
-          );
-        }
-      );
-    } catch (e) {
-      console.log(e);
-    }
-  } else {
+app.get(config.SUBDIR, async (req, res) => {
+  const base = {
+    config: config,
+    session: req.session,
+    user: req.user,
+    lang: langs[pickLangCode(req)],
+    langCode: pickLangCode(req),
+    availableLangs: availableLangs,
+    subdir: config.SUBDIR,
+  };
+
+  if (typeof req.user == "undefined") {
+    return res.render("index", base);
+  }
+
+  try {
+    // The five loadout tables are independent, so fetch them in parallel
+    // instead of the old five-deep callback chain.
+    const [[knife], [skins], [agents], [musics], [gloves]] = await Promise.all([
+      db.query("SELECT * FROM wp_player_knife WHERE steamid = ?", [req.user.id]),
+      db.query("SELECT * FROM wp_player_skins WHERE steamid = ?", [req.user.id]),
+      db.query("SELECT * FROM wp_player_agents WHERE steamid = ?", [req.user.id]),
+      db.query("SELECT * FROM wp_player_music WHERE steamid = ?", [req.user.id]),
+      db.query("SELECT * FROM wp_player_gloves WHERE steamid = ?", [req.user.id]),
+    ]);
+    // knife/musics/gloves: full row arrays (one row per weapon_team) so the
+    // client can keep per-team state.
     res.render("index", {
-      config: config,
-      session: req.session,
-      user: req.user,
-      lang: langs[pickLangCode(req)],
-      langCode: pickLangCode(req),
-      availableLangs: availableLangs,
-      subdir: config.SUBDIR,
+      ...base,
+      knife: knife,
+      skins: skins,
+      agents: agents[0],
+      musics: musics,
+      gloves: gloves,
     });
+  } catch (e) {
+    // Don't leave the request hanging on a DB error: render the page with an
+    // empty loadout so the UI still loads (matches the old "ignore err" behavior).
+    console.log(e);
+    res.render("index", { ...base, knife: [], skins: [], musics: [], gloves: [] });
   }
 });
 
@@ -272,22 +245,18 @@ app.get(`${config.SUBDIR}api/logout`, (req, res) => {
   });
 });
 
-app.get("/api/delete", (req, res) => {
-  connection.query(
-    "DELETE FROM wp_player_knife WHERE steamid = ?",
-    [req.user.id],
-    (err, results, fields) => {
-      connection.query(
-        "DELETE FROM wp_player_skins WHERE steamid = ?",
-        [req.user.id],
-        (err, results, fields) => {
-          req.session.destroy((err) => {
-            res.redirect("/");
-          });
-        }
-      );
-    }
-  );
+app.get("/api/delete", async (req, res) => {
+  // Guard against an unauthenticated hit (req.user would be undefined and crash).
+  if (!req.user) return res.redirect("/");
+  try {
+    await Promise.all([
+      db.query("DELETE FROM wp_player_knife WHERE steamid = ?", [req.user.id]),
+      db.query("DELETE FROM wp_player_skins WHERE steamid = ?", [req.user.id]),
+    ]);
+  } catch (e) {
+    console.log(e);
+  }
+  req.session.destroy(() => res.redirect("/"));
 });
 
 // do right redirect
@@ -308,121 +277,104 @@ const io = require("socket.io")(server);
 io.on("connection", (socket) => {
   console.log("Socket connected");
 
-  socket.on("change-knife", (data) => {
+  socket.on("change-knife", async (data) => {
     dbg("change-knife recv", data);
     // weapon_team in PK -> upsert one row per selected team.
     const teams = teamsFrom(data.team);
-    connection.query(
-      `INSERT INTO wp_player_knife (steamid, weapon_team, knife) VALUES ${teams.map(() => "(?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE knife = VALUES(knife)`,
-      teams.flatMap((t) => [data.steamUserId, t, data.weaponid]),
-      (err, results, fields) => {
-        if (err) dbg("change-knife SQL ERROR", err.message);
-        socket.emit("knife-changed", { knife: data.weaponid, teams });
-      }
-    );
+    try {
+      await db.query(
+        `INSERT INTO wp_player_knife (steamid, weapon_team, knife) VALUES ${teams.map(() => "(?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE knife = VALUES(knife)`,
+        teams.flatMap((t) => [data.steamUserId, t, data.weaponid])
+      );
+    } catch (err) {
+      dbg("change-knife SQL ERROR", err.message);
+    }
+    socket.emit("knife-changed", { knife: data.weaponid, teams });
   });
 
-  socket.on("change-glove", (data) => {
+  socket.on("change-glove", async (data) => {
     dbg("change-glove recv", data);
     const teams = teamsFrom(data.team);
-    connection.query(
-      `INSERT INTO wp_player_gloves (steamid, weapon_team, weapon_defindex) VALUES ${teams.map(() => "(?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE weapon_defindex = VALUES(weapon_defindex)`,
-      teams.flatMap((t) => [data.steamUserId, t, data.weaponid]),
-      (err, results, fields) => {
-        if (err) dbg("change-glove SQL ERROR", err.message);
-        socket.emit("glove-changed", { knife: data.weaponid, teams });
-      }
-    );
+    try {
+      await db.query(
+        `INSERT INTO wp_player_gloves (steamid, weapon_team, weapon_defindex) VALUES ${teams.map(() => "(?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE weapon_defindex = VALUES(weapon_defindex)`,
+        teams.flatMap((t) => [data.steamUserId, t, data.weaponid])
+      );
+    } catch (err) {
+      dbg("change-glove SQL ERROR", err.message);
+    }
+    socket.emit("glove-changed", { knife: data.weaponid, teams });
   });
 
-  socket.on("change-music", (data) => {
+  socket.on("change-music", async (data) => {
     dbg("change-music recv", data);
     const teams = teamsFrom(data.team);
-    connection.query(
-      `INSERT INTO wp_player_music (steamid, weapon_team, music_id) VALUES ${teams.map(() => "(?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE music_id = VALUES(music_id)`,
-      teams.flatMap((t) => [data.steamid, t, data.id]),
-      (err, results, fields) => {
-        if (err) dbg("change-music SQL ERROR", err.message);
-        socket.emit("music-changed", { music: data.id, teams });
-      }
-    );
+    try {
+      await db.query(
+        `INSERT INTO wp_player_music (steamid, weapon_team, music_id) VALUES ${teams.map(() => "(?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE music_id = VALUES(music_id)`,
+        teams.flatMap((t) => [data.steamid, t, data.id])
+      );
+    } catch (err) {
+      dbg("change-music SQL ERROR", err.message);
+    }
+    socket.emit("music-changed", { music: data.id, teams });
   });
 
-  socket.on("change-skin", (data) => {
+  socket.on("change-skin", async (data) => {
     dbg("change-skin recv", data);
     // weapon_team is part of the composite PK and has no default; write one row
     // per selected team (2=T, 3=CT). Upsert keeps it idempotent when the weapon
     // already has a row.
     const teams = teamsFrom(data.team);
-    connection.query(
-      `INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id) VALUES ${teams.map(() => "(?, ?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id)`,
-      teams.flatMap((t) => [data.steamid, t, data.weaponid, data.paintid]),
-      (err, results, fields) => {
-        if (err) dbg("change-skin SQL ERROR", err.message);
-        else dbg("change-skin SQL ok affectedRows=", results.affectedRows);
-        connection.query(
-          "SELECT * FROM wp_player_skins WHERE steamid = ?",
-          [data.steamid],
-          (err, results2, fields) => {
-            socket.emit("skin-changed", {
-              weaponid: data.weaponid,
-              paintid: data.paintid,
-              teams,
-              newSkins: results2,
-            });
-          }
-        );
-      }
+    try {
+      const [results] = await db.query(
+        `INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id) VALUES ${teams.map(() => "(?, ?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id)`,
+        teams.flatMap((t) => [data.steamid, t, data.weaponid, data.paintid])
+      );
+      dbg("change-skin SQL ok affectedRows=", results.affectedRows);
+    } catch (err) {
+      dbg("change-skin SQL ERROR", err.message);
+    }
+    const [newSkins] = await db.query(
+      "SELECT * FROM wp_player_skins WHERE steamid = ?",
+      [data.steamid]
     );
+    socket.emit("skin-changed", {
+      weaponid: data.weaponid,
+      paintid: data.paintid,
+      teams,
+      newSkins,
+    });
   });
 
-  socket.on("change-agent", (data) => {
-    connection.query(
-      "SELECT * FROM wp_player_agents WHERE steamid = ?",
-      [data.steamid],
-      (err, results, fields) => {
-        if (err) throw err;
-        if (results.length >= 1) {
-          connection.query(
-            `UPDATE wp_player_agents SET agent_${data.team} = ? WHERE steamid = ?`,
-            [data.model, data.steamid],
-            (err, results, fields) => {
-              if (err) throw err;
-              connection.query(
-                "SELECT * FROM wp_player_agents WHERE steamid = ?",
-                [data.steamid],
-                (err, results2, fields) => {
-                  if (err) throw err;
-                  socket.emit("agent-changed", {
-                    agents: results2,
-                    currentAgent: data.model,
-                  });
-                }
-              );
-            }
-          );
-        } else {
-          connection.query(
-            `INSERT INTO wp_player_agents (steamid, agent_${data.team}) VALUES (?, ?)`,
-            [data.steamid, data.model],
-            (err, results, fields) => {
-              if (err) throw err;
-              connection.query(
-                "SELECT * FROM wp_player_agents WHERE steamid = ?",
-                [data.steamid],
-                (err, results2, fields) => {
-                  if (err) throw err;
-                  socket.emit("agent-changed", {
-                    agents: results2,
-                    currentAgent: data.model,
-                  });
-                }
-              );
-            }
-          );
-        }
+  socket.on("change-agent", async (data) => {
+    try {
+      const [existing] = await db.query(
+        "SELECT * FROM wp_player_agents WHERE steamid = ?",
+        [data.steamid]
+      );
+      // agent_ct / agent_t are separate columns; data.team is whitelisted to
+      // 'ct'/'t' on the client, but keep it constrained here too.
+      const col = data.team === "ct" ? "agent_ct" : "agent_t";
+      if (existing.length >= 1) {
+        await db.query(
+          `UPDATE wp_player_agents SET ${col} = ? WHERE steamid = ?`,
+          [data.model, data.steamid]
+        );
+      } else {
+        await db.query(
+          `INSERT INTO wp_player_agents (steamid, ${col}) VALUES (?, ?)`,
+          [data.steamid, data.model]
+        );
       }
-    );
+      const [agents] = await db.query(
+        "SELECT * FROM wp_player_agents WHERE steamid = ?",
+        [data.steamid]
+      );
+      socket.emit("agent-changed", { agents, currentAgent: data.model });
+    } catch (err) {
+      dbg("change-agent SQL ERROR", err.message);
+    }
   });
 
   // Rebuild a canonical sticker slot string from untrusted client input. The
@@ -448,7 +400,7 @@ io.on("connection", (socket) => {
     return `${id};0;${x};${y};${wear};${scale};${rotation}`;
   };
 
-  socket.on("change-params", (data) => {
+  socket.on("change-params", async (data) => {
     dbg("change-params recv", data);
     const wear = parseFloat(data.float);
     const seed = parseInt(data.pattern, 10) || 0;
@@ -462,49 +414,48 @@ io.on("connection", (socket) => {
     // the PK, so it must be supplied.
     const teams = teamsFrom(data.team);
     const rowValues = (team) => [data.steamid, team, data.weaponid, data.paintid, safeWear, seed, stattrak, ...stk];
-    connection.query(
-      `INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id, weapon_wear, weapon_seed, weapon_stattrak, weapon_sticker_0, weapon_sticker_1, weapon_sticker_2, weapon_sticker_3, weapon_sticker_4) VALUES ${teams.map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id), weapon_wear = VALUES(weapon_wear), weapon_seed = VALUES(weapon_seed), weapon_stattrak = VALUES(weapon_stattrak), weapon_sticker_0 = VALUES(weapon_sticker_0), weapon_sticker_1 = VALUES(weapon_sticker_1), weapon_sticker_2 = VALUES(weapon_sticker_2), weapon_sticker_3 = VALUES(weapon_sticker_3), weapon_sticker_4 = VALUES(weapon_sticker_4)`,
-      teams.flatMap(rowValues),
-      (err, results, fields) => {
-        if (err) dbg("change-params SQL ERROR", err.message);
-        else dbg("change-params SQL ok affectedRows=", results.affectedRows);
-        // Return the fresh rows so the client can refresh its in-memory skins and
-        // re-open the modal with the saved stickers without a page reload.
-        connection.query(
-          "SELECT * FROM wp_player_skins WHERE steamid = ?",
-          [data.steamid],
-          (err2, results2, fields2) => {
-            socket.emit("params-changed", { newSkins: results2 || [], teams });
-          }
-        );
-      }
+    try {
+      const [results] = await db.query(
+        `INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id, weapon_wear, weapon_seed, weapon_stattrak, weapon_sticker_0, weapon_sticker_1, weapon_sticker_2, weapon_sticker_3, weapon_sticker_4) VALUES ${teams.map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id), weapon_wear = VALUES(weapon_wear), weapon_seed = VALUES(weapon_seed), weapon_stattrak = VALUES(weapon_stattrak), weapon_sticker_0 = VALUES(weapon_sticker_0), weapon_sticker_1 = VALUES(weapon_sticker_1), weapon_sticker_2 = VALUES(weapon_sticker_2), weapon_sticker_3 = VALUES(weapon_sticker_3), weapon_sticker_4 = VALUES(weapon_sticker_4)`,
+        teams.flatMap(rowValues)
+      );
+      dbg("change-params SQL ok affectedRows=", results.affectedRows);
+    } catch (err) {
+      dbg("change-params SQL ERROR", err.message);
+    }
+    // Return the fresh rows so the client can refresh its in-memory skins and
+    // re-open the modal with the saved stickers without a page reload.
+    const [newSkins] = await db.query(
+      "SELECT * FROM wp_player_skins WHERE steamid = ?",
+      [data.steamid]
     );
+    socket.emit("params-changed", { newSkins: newSkins || [], teams });
   });
 
-  socket.on("reset-skin", (data) => {
+  socket.on("reset-skin", async (data) => {
     // Delete only the selected team's row(s) and return the fresh rows: the
     // other team may keep its skin, so the client can't just drop every row
     // with this defindex locally.
     const teams = teamsFrom(data.team);
-    connection.query(
-      "DELETE FROM wp_player_skins WHERE steamid = ? AND weapon_defindex = ? AND weapon_team IN (?)",
-      [data.steamid, data.weaponid, teams],
-      (err, results, fields) => {
-        connection.query(
-          "SELECT * FROM wp_player_skins WHERE steamid = ?",
-          [data.steamid],
-          (err2, results2, fields2) => {
-            socket.emit("skin-reset", { weaponid: data.weaponid, teams, newSkins: results2 || [] });
-          }
-        );
-      }
+    try {
+      await db.query(
+        "DELETE FROM wp_player_skins WHERE steamid = ? AND weapon_defindex = ? AND weapon_team IN (?)",
+        [data.steamid, data.weaponid, teams]
+      );
+    } catch (err) {
+      dbg("reset-skin SQL ERROR", err.message);
+    }
+    const [newSkins] = await db.query(
+      "SELECT * FROM wp_player_skins WHERE steamid = ?",
+      [data.steamid]
     );
+    socket.emit("skin-reset", { weaponid: data.weaponid, teams, newSkins: newSkins || [] });
   });
 
   // Apply a full item from a (masked) CS2 inspect link: decode it locally and
   // write the weapon + paint + wear + seed + stattrak + nametag + stickers into
   // wp_player_skins for both teams, equipping the knife/glove model when needed.
-  socket.on("apply-inspect", (data) => {
+  socket.on("apply-inspect", async (data) => {
     dbg("apply-inspect recv", data && data.link);
     let item;
     try {
@@ -535,43 +486,36 @@ io.on("connection", (socket) => {
 
     const teams = teamsFrom(data.team);
     const rowValues = (team) => [steamid, team, defindex, paint, wear, seed, stattrak, nametag, ...stk];
-    connection.query(
-      `INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id, weapon_wear, weapon_seed, weapon_stattrak, weapon_nametag, weapon_sticker_0, weapon_sticker_1, weapon_sticker_2, weapon_sticker_3, weapon_sticker_4) VALUES ${teams.map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id), weapon_wear = VALUES(weapon_wear), weapon_seed = VALUES(weapon_seed), weapon_stattrak = VALUES(weapon_stattrak), weapon_nametag = VALUES(weapon_nametag), weapon_sticker_0 = VALUES(weapon_sticker_0), weapon_sticker_1 = VALUES(weapon_sticker_1), weapon_sticker_2 = VALUES(weapon_sticker_2), weapon_sticker_3 = VALUES(weapon_sticker_3), weapon_sticker_4 = VALUES(weapon_sticker_4)`,
-      teams.flatMap(rowValues),
-      (err) => {
-        if (err) {
-          dbg("apply-inspect skins SQL ERROR", err.message);
-          socket.emit("inspect-applied", { ok: false, error: "DB_ERROR" });
-          return;
-        }
+    try {
+      await db.query(
+        `INSERT INTO wp_player_skins (steamid, weapon_team, weapon_defindex, weapon_paint_id, weapon_wear, weapon_seed, weapon_stattrak, weapon_nametag, weapon_sticker_0, weapon_sticker_1, weapon_sticker_2, weapon_sticker_3, weapon_sticker_4) VALUES ${teams.map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE weapon_paint_id = VALUES(weapon_paint_id), weapon_wear = VALUES(weapon_wear), weapon_seed = VALUES(weapon_seed), weapon_stattrak = VALUES(weapon_stattrak), weapon_nametag = VALUES(weapon_nametag), weapon_sticker_0 = VALUES(weapon_sticker_0), weapon_sticker_1 = VALUES(weapon_sticker_1), weapon_sticker_2 = VALUES(weapon_sticker_2), weapon_sticker_3 = VALUES(weapon_sticker_3), weapon_sticker_4 = VALUES(weapon_sticker_4)`,
+        teams.flatMap(rowValues)
+      );
 
-        // Equip the matching knife/glove model so the item actually shows up.
-        const finish = () =>
-          socket.emit("inspect-applied", {
-            ok: true,
-            weaponid: defindex,
-            paintid: paint,
-            isKnife: !!KNIFE_DEFINDEX_TO_NAME[defindex],
-            isGlove: defindex >= GLOVE_DEFINDEX_MIN,
-          });
-
-        if (KNIFE_DEFINDEX_TO_NAME[defindex]) {
-          const knife = KNIFE_DEFINDEX_TO_NAME[defindex];
-          connection.query(
-            `INSERT INTO wp_player_knife (steamid, weapon_team, knife) VALUES ${teams.map(() => "(?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE knife = VALUES(knife)`,
-            teams.flatMap((t) => [steamid, t, knife]),
-            finish
-          );
-        } else if (defindex >= GLOVE_DEFINDEX_MIN) {
-          connection.query(
-            `INSERT INTO wp_player_gloves (steamid, weapon_team, weapon_defindex) VALUES ${teams.map(() => "(?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE weapon_defindex = VALUES(weapon_defindex)`,
-            teams.flatMap((t) => [steamid, t, defindex]),
-            finish
-          );
-        } else {
-          finish();
-        }
+      // Equip the matching knife/glove model so the item actually shows up.
+      if (KNIFE_DEFINDEX_TO_NAME[defindex]) {
+        const knife = KNIFE_DEFINDEX_TO_NAME[defindex];
+        await db.query(
+          `INSERT INTO wp_player_knife (steamid, weapon_team, knife) VALUES ${teams.map(() => "(?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE knife = VALUES(knife)`,
+          teams.flatMap((t) => [steamid, t, knife])
+        );
+      } else if (defindex >= GLOVE_DEFINDEX_MIN) {
+        await db.query(
+          `INSERT INTO wp_player_gloves (steamid, weapon_team, weapon_defindex) VALUES ${teams.map(() => "(?, ?, ?)").join(", ")} ON DUPLICATE KEY UPDATE weapon_defindex = VALUES(weapon_defindex)`,
+          teams.flatMap((t) => [steamid, t, defindex])
+        );
       }
-    );
+
+      socket.emit("inspect-applied", {
+        ok: true,
+        weaponid: defindex,
+        paintid: paint,
+        isKnife: !!KNIFE_DEFINDEX_TO_NAME[defindex],
+        isGlove: defindex >= GLOVE_DEFINDEX_MIN,
+      });
+    } catch (err) {
+      dbg("apply-inspect skins SQL ERROR", err.message);
+      socket.emit("inspect-applied", { ok: false, error: "DB_ERROR" });
+    }
   });
 });

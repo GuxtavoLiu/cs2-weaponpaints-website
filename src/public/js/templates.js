@@ -963,6 +963,7 @@ window.showLoadout = () => {
         <div class="col-12 d-flex justify-content-between align-items-center mb-2 flex-wrap">
             <h3 class="m-0">${langObject.loadoutTitle || 'Loadout'}</h3>
             <div class="d-flex align-items-center gap-3">
+                <button type="button" class="btn btn-outline-primary btn-sm d-flex align-items-center" onclick="openShareModal()" title="${langObject.shareBtn || 'Import / Export'}"><i class="fa-solid fa-share-nodes me-1"></i><small>${langObject.shareBtn || 'Import / Export'}</small></button>
                 ${window.teamSelectorHtml()}
                 <button type="button" id="cardSizeBtn" class="btn btn-outline-primary btn-sm" onclick="cycleCardSize()" title="${langObject.cardSize || 'Card size'}"><i class="fa-solid fa-table-cells"></i></button>
                 <div class="form-check form-switch m-0 d-flex align-items-center" data-bs-theme="dark">

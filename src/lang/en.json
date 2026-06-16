@@ -17,7 +17,8 @@
         "heavy": "Heavy",
         "ctAgents": "CT Agents",
         "tAgents": "T Agents",
-        "utility": "Zeus"
+        "utility": "Zeus",
+        "search": "Search"
     },
     "selectCategory": "Select category",
     "loadoutTitle": "Your loadout",
@@ -99,5 +100,26 @@
     "positionClickSelect":"Click a sticker to select it. Drag to move, scroll to rotate.",
     "positionSelected":"Selected",
     "clearAll":"Clear all stickers",
-    "defaultSlots":"Default slot positions"
+    "defaultSlots":"Default slot positions",
+    "toastSaved":"Saved",
+    "toastReset":"Skin reset",
+    "searchSkinsTitle":"Search skins",
+    "searchSkinsPlaceholder":"Search any skin, e.g. AK Redline",
+    "searchSkinsEmpty":"Type above to search across every weapon.",
+    "searchNoResults":"No skins match your search.",
+    "shareBtn":"Import / Export",
+    "shareTitle":"Import / Export loadout",
+    "shareExportHead":"Export",
+    "shareImportHead":"Import",
+    "sharePaste":"Paste",
+    "shareExportDesc":"Copy this code to share your current loadout.",
+    "shareCopy":"Copy code",
+    "shareCopied":"Code copied!",
+    "shareImportDesc":"Paste a loadout code to apply it to your account.",
+    "shareImportPlaceholder":"WPL1:...",
+    "shareImport":"Apply code",
+    "shareApplying":"Applying loadout",
+    "shareApplied":"Loadout applied!",
+    "shareInvalid":"Invalid loadout code.",
+    "shareEmpty":"Your loadout is empty - nothing to share yet."
 }

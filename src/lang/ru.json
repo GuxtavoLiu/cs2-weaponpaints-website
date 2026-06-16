@@ -14,7 +14,8 @@
         "SMGs": "Пистолеты-пулемёты",
         "heavy": "Тяжёлое",
         "ctAgents": "Агенты T",
-        "tAgents": "Агенты CT"
+        "tAgents": "Агенты CT",
+        "search": "Поиск"
     },
     "selectCategory": "Выберите категорию",
     "loadoutTitle": "Ваше снаряжение",
@@ -89,5 +90,26 @@
     "positionClickSelect":"Нажмите на стикер, чтобы выбрать. Перетаскивание двигает, колесо вращает.",
     "positionSelected":"Выбран",
     "clearAll":"Очистить все стикеры",
-    "defaultSlots":"Стандартные позиции слотов"
+    "defaultSlots":"Стандартные позиции слотов",
+    "toastSaved":"Сохранено",
+    "toastReset":"Скин сброшен",
+    "searchSkinsTitle":"Поиск скинов",
+    "searchSkinsPlaceholder":"Найдите любой скин, напр. AK Redline",
+    "searchSkinsEmpty":"Введите выше, чтобы искать по всему оружию.",
+    "searchNoResults":"Ничего не найдено.",
+    "shareBtn":"Импорт / Экспорт",
+    "shareTitle":"Импорт / экспорт снаряжения",
+    "shareExportHead":"Экспорт",
+    "shareImportHead":"Импорт",
+    "sharePaste":"Вставить",
+    "shareExportDesc":"Скопируйте этот код, чтобы поделиться снаряжением.",
+    "shareCopy":"Копировать код",
+    "shareCopied":"Код скопирован!",
+    "shareImportDesc":"Вставьте код, чтобы применить снаряжение к аккаунту.",
+    "shareImportPlaceholder":"WPL1:...",
+    "shareImport":"Применить код",
+    "shareApplying":"Применение",
+    "shareApplied":"Снаряжение применено!",
+    "shareInvalid":"Неверный код снаряжения.",
+    "shareEmpty":"Снаряжение пустое — пока нечем делиться."
 }

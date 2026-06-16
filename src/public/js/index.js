@@ -3,6 +3,257 @@ const socket = io()
 let currentWeaponId = ''
 let currentPaintId = ''
 
+// ---- Toast notifications --------------------------------------------------
+// Lightweight, dependency-free confirmation toasts. The only prior feedback on
+// a save was the card spinner hiding; this gives an explicit "it saved" cue.
+// window-scoped so the ES-module files (sideBtns.js, templates.js) can call it.
+window.showToast = (message, type = 'success', force = false) => {
+    // During a loadout import we emit many saves in a burst; suppress their
+    // per-save toasts (the import shows its own progress, passing force=true).
+    if (window.__suppressToasts && !force) return
+    let stack = document.getElementById('toastStack')
+    if (!stack) {
+        stack = document.createElement('div')
+        stack.id = 'toastStack'
+        document.body.appendChild(stack)
+    }
+    const toast = document.createElement('div')
+    toast.className = `wp-toast wp-toast-${type}`
+    const icon = type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'
+    toast.innerHTML = `<i class="fa-solid ${icon} me-2"></i><span></span>`
+    toast.querySelector('span').textContent = message
+    stack.appendChild(toast)
+    // Force reflow so the entry transition runs, then schedule auto-dismiss.
+    requestAnimationFrame(() => toast.classList.add('show'))
+    setTimeout(() => {
+        toast.classList.remove('show')
+        toast.addEventListener('transitionend', () => toast.remove(), { once: true })
+        // Fallback removal in case the transitionend never fires.
+        setTimeout(() => toast.remove(), 400)
+    }, 2500)
+}
+
+// ---- Keyboard shortcuts ---------------------------------------------------
+// Esc: Bootstrap already closes #patternFloat / #inspectModal, and a capture
+// listener below closes #stickerPicker; here we cover the 2D sticker editor
+// (which had no Esc handler) and add "/" to jump to the global skin search.
+const isTypingTarget = (el) =>
+    !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable)
+
+const anyOverlayOpen = () => {
+    const open = (id) => {
+        const el = document.getElementById(id)
+        return !!el && el.classList.contains('show')
+    }
+    return open('stickerPicker') || open('sticker2dEditor') || open('patternFloat') || open('inspectModal') || open('shareModal')
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        // The 2D editor sits inside #patternFloat; closing it here (and stopping
+        // propagation) prevents Esc from also tearing down the whole modal.
+        const ed = document.getElementById('sticker2dEditor')
+        if (ed && ed.classList.contains('show')) {
+            e.stopPropagation()
+            e.preventDefault()
+            window.closeStickerEditor?.()
+        }
+        return
+    }
+
+    // "/" focuses the global skin search (skipped while typing or with any
+    // overlay/modal open, so it never hijacks a real keystroke).
+    if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (isTypingTarget(e.target) || anyOverlayOpen()) return
+        if (typeof window.showSearch === 'function') {
+            e.preventDefault()
+            window.showSearch()
+        }
+    }
+}, true)
+
+// ---- Share / export loadout ----------------------------------------------
+// Export the whole loadout (skins + knife/gloves/music per team + agents) as a
+// portable base64 code, and import one by re-emitting the EXISTING socket
+// events (no new server endpoint). Import reuses change-params for skins (its
+// response handler is DOM-safe), and reloads at the end so the page reflects
+// the freshly-written DB regardless of which grid was on screen.
+const encodeLoadout = (obj) => 'WPL1:' + btoa(unescape(encodeURIComponent(JSON.stringify(obj))))
+const decodeLoadout = (raw) => {
+    const code = raw.startsWith('WPL1:') ? raw.slice(5) : raw
+    return JSON.parse(decodeURIComponent(escape(atob(code))))
+}
+
+const buildLoadoutExport = () => {
+    if (typeof user === 'undefined') return null
+    const skins = (typeof selectedSkins !== 'undefined' && Array.isArray(selectedSkins) ? selectedSkins : [])
+        .map(s => ({
+            t: Number(s.weapon_team),
+            d: Number(s.weapon_defindex),
+            p: Number(s.weapon_paint_id) || 0,
+            w: s.weapon_wear != null ? Number(s.weapon_wear) : 0,
+            e: s.weapon_seed != null ? Number(s.weapon_seed) : 0,
+            st: s.weapon_stattrak ? 1 : 0,
+            k: [0, 1, 2, 3, 4].map(i => s['weapon_sticker_' + i] || '0;0;0;0;0;0;0'),
+            n: s.weapon_nametag || null,
+        }))
+        .filter(s => Number.isFinite(s.d))
+    const byTeam = (kind, field) => {
+        const o = {}
+        if (typeof loadoutByTeam !== 'undefined' && loadoutByTeam[kind]) {
+            [2, 3].forEach(t => {
+                const r = loadoutByTeam[kind][t]
+                if (r && r[field] != null) o[t] = r[field]
+            })
+        }
+        return o
+    }
+    const knife = byTeam('knife', 'knife')
+    const gloves = byTeam('gloves', 'weapon_defindex')
+    const music = byTeam('music', 'music_id')
+    const agents = {}
+    if (typeof selectedAgents !== 'undefined' && selectedAgents) {
+        if (selectedAgents.agent_ct) agents.ct = selectedAgents.agent_ct
+        if (selectedAgents.agent_t) agents.t = selectedAgents.agent_t
+    }
+    const empty = !skins.length && !Object.keys(knife).length && !Object.keys(gloves).length &&
+        !Object.keys(music).length && !Object.keys(agents).length
+    if (empty) return null
+    return encodeLoadout({ v: 1, skins, knife, gloves, music, agents })
+}
+
+// The export code is held in memory (no on-screen field); Copy puts it on the
+// clipboard directly.
+let exportCode = ''
+
+const fallbackCopy = (text, cb) => {
+    const t = document.createElement('textarea')
+    t.value = text
+    t.style.position = 'fixed'
+    t.style.opacity = '0'
+    document.body.appendChild(t)
+    t.focus()
+    t.select()
+    try { document.execCommand('copy') } catch (e) { /* ignore */ }
+    document.body.removeChild(t)
+    cb && cb()
+}
+
+window.openShareModal = () => {
+    exportCode = buildLoadoutExport() || ''
+    const status = document.getElementById('shareStatus')
+    const imp = document.getElementById('shareImportCode')
+    const copyBtn = document.getElementById('shareCopyBtn')
+    const copyLabel = document.getElementById('shareCopyLabel')
+    if (imp) imp.value = ''
+    if (status) { status.className = 'm-0 mt-2 small'; status.innerText = '' }
+    if (copyLabel) copyLabel.innerText = exportCode ? (langObject.shareCopy || 'Copy code') : (langObject.shareEmpty || 'Nothing to share')
+    if (copyBtn) { copyBtn.disabled = !exportCode; copyBtn.classList.remove('copied') }
+    const el = document.getElementById('shareModal')
+    if (el && window.bootstrap) window.bootstrap.Modal.getOrCreateInstance(el).show()
+}
+
+window.copyShareCode = () => {
+    if (!exportCode) return
+    const copyBtn = document.getElementById('shareCopyBtn')
+    const copyLabel = document.getElementById('shareCopyLabel')
+    const ok = () => {
+        if (copyLabel) copyLabel.innerText = langObject.shareCopied || 'Copied!'
+        if (copyBtn) copyBtn.classList.add('copied')
+        window.showToast?.(langObject.shareCopied || 'Code copied!', 'success', true)
+        setTimeout(() => {
+            if (copyLabel) copyLabel.innerText = langObject.shareCopy || 'Copy code'
+            if (copyBtn) copyBtn.classList.remove('copied')
+        }, 1600)
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(exportCode).then(ok, () => fallbackCopy(exportCode, ok))
+    } else {
+        fallbackCopy(exportCode, ok)
+    }
+}
+
+// Paste the clipboard into the import box. Clipboard read can be blocked
+// (permissions / non-HTTPS); if so we just focus the field for a manual paste.
+window.pasteShareCode = async () => {
+    const ta = document.getElementById('shareImportCode')
+    if (!ta) return
+    try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            const txt = await navigator.clipboard.readText()
+            if (txt) ta.value = txt.trim()
+        }
+    } catch (e) { /* clipboard read blocked; fall through to manual paste */ }
+    ta.focus()
+}
+
+const applyLoadout = (data) => {
+    const status = document.getElementById('shareStatus')
+    const setStatus = (cls, txt) => { if (status) { status.className = 'm-0 mt-2 ' + cls; status.innerText = txt } }
+    const clampWear = (w) => { const n = Number(w); return Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0 }
+    const teamOf = (t) => (Number(t) === 2 || Number(t) === 3 ? Number(t) : 'both')
+
+    const queue = []
+    ;(Array.isArray(data.skins) ? data.skins : []).forEach(s => {
+        if (!Number.isFinite(Number(s.d))) return
+        queue.push(() => socket.emit('change-params', {
+            steamid: user.id,
+            weaponid: Number(s.d),
+            paintid: Number(s.p) || 0,
+            float: clampWear(s.w),
+            pattern: Number(s.e) || 0,
+            stattrak: !!s.st,
+            stickers: Array.isArray(s.k) ? s.k.slice(0, 5) : [],
+            team: teamOf(s.t),
+        }))
+    })
+    const perTeam = (obj, fn) => {
+        if (!obj) return
+        Object.keys(obj).forEach(t => { const team = Number(t); if (team === 2 || team === 3) queue.push(() => fn(obj[t], team)) })
+    }
+    perTeam(data.knife, (v, team) => socket.emit('change-knife', { weaponid: v, steamUserId: user.id, team }))
+    perTeam(data.gloves, (v, team) => socket.emit('change-glove', { weaponid: Number(v), steamUserId: user.id, team }))
+    perTeam(data.music, (v, team) => socket.emit('change-music', { steamid: user.id, id: v, team }))
+    if (data.agents) {
+        if (data.agents.ct) queue.push(() => socket.emit('change-agent', { steamid: user.id, model: data.agents.ct, team: 'ct' }))
+        if (data.agents.t) queue.push(() => socket.emit('change-agent', { steamid: user.id, model: data.agents.t, team: 't' }))
+    }
+
+    const total = queue.length
+    if (!total) { setStatus('text-danger', langObject.shareInvalid || 'Invalid loadout code.'); return }
+
+    // Suppress the per-save toasts each emit would trigger; show our own progress.
+    window.__suppressToasts = true
+    const btn = document.getElementById('shareImportBtn')
+    if (btn) btn.disabled = true
+    let i = 0
+    const step = () => {
+        if (i >= total) {
+            setStatus('text-success', (langObject.shareApplied || 'Loadout applied!'))
+            window.showToast?.(langObject.shareApplied || 'Loadout applied!', 'success', true)
+            // Reload so every grid reflects the freshly-written rows.
+            setTimeout(() => location.reload(), 800)
+            return
+        }
+        try { queue[i]() } catch (e) { /* response handlers assume on-screen cards; ignore */ }
+        i++
+        setStatus('text-secondary', `${langObject.shareApplying || 'Applying'} ${i}/${total}`)
+        setTimeout(step, 70)
+    }
+    step()
+}
+
+window.applyShareCode = () => {
+    const raw = (document.getElementById('shareImportCode')?.value || '').trim()
+    const status = document.getElementById('shareStatus')
+    const fail = () => { if (status) { status.className = 'm-0 mt-2 text-danger'; status.innerText = langObject.shareInvalid || 'Invalid loadout code.' } }
+    if (!raw) return
+    let data
+    try { data = decodeLoadout(raw) } catch (e) { return fail() }
+    if (!data || typeof data !== 'object' || data.v !== 1) return fail()
+    applyLoadout(data)
+}
+
 const getJsonRequest = function (url) {
     return new Promise(function (resolve, reject) {
       var xhr = new XMLHttpRequest();
@@ -786,6 +1037,7 @@ socket.on('params-changed', (data) => {
         selectedSkins = data.newSkins
     }
     document.getElementById('modalButton').innerHTML = langObject.change
+    window.showToast?.(langObject.toastSaved || 'Saved')
 })
 
 // ---- Inspect link ----
