@@ -134,41 +134,20 @@ const buildLoadoutExport = () => {
     return encodeLoadout({ v: 1, skins, knife, gloves, music, agents })
 }
 
-// The export code is held in memory (no on-screen field); Copy puts it on the
-// clipboard directly.
 let exportCode = ''
 
-// execCommand('copy') fallback for non-secure contexts (plain HTTP on a public
-// IP), where navigator.clipboard is undefined. Returns whether the copy
-// actually succeeded so the caller can offer a manual copy when it didn't.
-const fallbackCopy = (text) => {
-    const t = document.createElement('textarea')
-    t.value = text
-    t.setAttribute('readonly', '')
-    t.style.position = 'fixed'
-    t.style.top = '0'
-    t.style.left = '0'
-    t.style.opacity = '0'
-    document.body.appendChild(t)
-    t.focus()
-    t.select()
-    try { t.setSelectionRange(0, text.length) } catch (e) { /* ignore */ }
-    let ok = false
-    try { ok = document.execCommand('copy') } catch (e) { ok = false }
-    document.body.removeChild(t)
-    return ok
-}
-
-// Last resort when neither the async API nor execCommand can write the
-// clipboard: show the code in a selectable field so the user copies it by hand.
-const revealExportCode = () => {
+// Select the on-screen export field so the code can always be copied manually
+// (Ctrl+C) - the safety net when programmatic copy is blocked (plain HTTP, or
+// execCommand denied inside the modal).
+const selectExportField = () => {
     const f = document.getElementById('shareExportCode')
-    if (!f) { try { window.prompt(langObject.shareCopy || 'Copy code', exportCode) } catch (e) {} return }
+    if (!f) return null
     f.style.display = 'block'
     f.value = exportCode
     f.focus()
     f.select()
-    window.showToast?.(langObject.shareCopyManual || 'Copy the code manually', 'info', true)
+    try { f.setSelectionRange(0, exportCode.length) } catch (e) { /* ignore */ }
+    return f
 }
 
 window.openShareModal = () => {
@@ -179,7 +158,9 @@ window.openShareModal = () => {
     const copyLabel = document.getElementById('shareCopyLabel')
     const exp = document.getElementById('shareExportCode')
     if (imp) imp.value = ''
-    if (exp) { exp.value = ''; exp.style.display = 'none' }
+    // Show the code up front in a selectable field so copying always works,
+    // even on non-secure origins where the clipboard API is unavailable.
+    if (exp) { exp.value = exportCode; exp.style.display = exportCode ? 'block' : 'none' }
     if (status) { status.className = 'm-0 mt-2 small'; status.innerText = '' }
     if (copyLabel) copyLabel.innerText = exportCode ? (langObject.shareCopy || 'Copy code') : (langObject.shareEmpty || 'Nothing to share')
     if (copyBtn) { copyBtn.disabled = !exportCode; copyBtn.classList.remove('copied') }
@@ -200,14 +181,18 @@ window.copyShareCode = () => {
             if (copyBtn) copyBtn.classList.remove('copied')
         }, 1600)
     }
-    // Only report success when the clipboard write actually worked; otherwise
-    // reveal the code for a manual copy (don't fake a "Copied!" that did nothing).
+    // Select the visible code field first: it's our guaranteed manual fallback,
+    // and copying from a field inside the modal avoids the focus-trap issues of
+    // a detached textarea. Then try, in order: async clipboard API (secure
+    // origins), legacy execCommand (non-secure), and finally leave it selected
+    // with a "copy manually" hint.
+    selectExportField()
+    const tryExec = () => { try { return document.execCommand('copy') } catch (e) { return false } }
+    const onManual = () => window.showToast?.(langObject.shareCopyManual || 'Copy the code manually', 'info', true)
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(exportCode).then(onSuccess, () => {
-            fallbackCopy(exportCode) ? onSuccess() : revealExportCode()
-        })
+        navigator.clipboard.writeText(exportCode).then(onSuccess, () => { tryExec() ? onSuccess() : onManual() })
     } else {
-        fallbackCopy(exportCode) ? onSuccess() : revealExportCode()
+        tryExec() ? onSuccess() : onManual()
     }
 }
 
