@@ -414,30 +414,29 @@ socket.on("skin-changed", (data) => {
 });
 
 socket.on("agent-changed", (data) => {
-  let elms = document.getElementsByClassName("weapon-card");
-
-  for (var i = 0; i < elms.length; i++) {
-    elms[i].classList.remove("active-card");
-  }
-
   selectedAgents = data.agents[0];
 
-  document
-    .getElementById(`agent-${data.currentAgent}`)
-    .classList.add("active-card");
-  document.getElementById(`loading-${data.currentAgent}`).style.opacity = 0;
-  document.getElementById(`loading-${data.currentAgent}`).style.visibility =
-    "hidden";
+  // Update the active card only when the agents grid is the open view; on any
+  // other view (e.g. the loadout overview during an import) the card doesn't
+  // exist, so guard the lookups instead of dereferencing null.
+  const card = document.getElementById(`agent-${data.currentAgent}`);
+  if (card) {
+    document
+      .querySelectorAll(".weapon-card")
+      .forEach((e) => e.classList.remove("active-card"));
+    card.classList.add("active-card");
+  } else if (window.currentViewRender === window.showLoadout) {
+    window.currentViewRender();
+  }
+  const load = document.getElementById(`loading-${data.currentAgent}`);
+  if (load) {
+    load.style.opacity = 0;
+    load.style.visibility = "hidden";
+  }
   window.showToast?.(langObject.toastSaved || "Saved");
 });
 
 socket.on("music-changed", (data) => {
-  let elms = document.getElementsByClassName("weapon-card");
-
-  for (var i = 0; i < elms.length; i++) {
-    elms[i].classList.remove("active-card");
-  }
-
   (data.teams || [2, 3]).forEach((t) => {
     loadoutByTeam.music[t] = {
       ...(loadoutByTeam.music[t] || {}),
@@ -447,14 +446,27 @@ socket.on("music-changed", (data) => {
     };
   });
   syncDerivedSelection();
-  document.querySelectorAll("#skinsContainer .team-badge").forEach((b) => b.remove());
 
-  document
-    .getElementById(`music-${data.music}`)
-    .classList.add("active-card");
-  document.getElementById(`loading-${data.music}`).style.opacity = 0;
-  document.getElementById(`loading-${data.music}`).style.visibility =
-    "hidden";
+  // Update the active card only when the music grid is the open view; on any
+  // other view the card doesn't exist, so guard the lookups (an import applies
+  // music while a different view, e.g. the loadout, is shown).
+  const card = document.getElementById(`music-${data.music}`);
+  if (card) {
+    document
+      .querySelectorAll(".weapon-card")
+      .forEach((e) => e.classList.remove("active-card"));
+    document
+      .querySelectorAll("#skinsContainer .team-badge")
+      .forEach((b) => b.remove());
+    card.classList.add("active-card");
+  } else if (window.currentViewRender === window.showLoadout) {
+    window.currentViewRender();
+  }
+  const load = document.getElementById(`loading-${data.music}`);
+  if (load) {
+    load.style.opacity = 0;
+    load.style.visibility = "hidden";
+  }
   window.showToast?.(langObject.toastSaved || "Saved");
 });
 
