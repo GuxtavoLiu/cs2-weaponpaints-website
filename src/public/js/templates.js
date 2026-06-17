@@ -992,7 +992,13 @@ window.showLoadout = () => {
     applyCardSize(getCardSize())
 }
 
-// Show the loadout as the landing screen once the data is ready.
+// Landing render. For the home path show the loadout immediately (no flash);
+// for a deep-linked category URL (/rifles, /weapon/:name, ...) leave the
+// skeleton up — router.js renders the matching view on DOMContentLoaded, once
+// every show* function (defined across the later modules) is available.
 if (typeof user !== 'undefined') {
-    showLoadout()
+    var landingPath = location.pathname.replace(/\/+$/, '') || '/'
+    if (landingPath === '/' || landingPath === '/loadout') {
+        showLoadout()
+    }
 }

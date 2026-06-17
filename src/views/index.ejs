@@ -216,7 +216,7 @@
                                 <small class="text-secondary"><%= lang.shareExportDesc %></small>
                             </div>
                         </div>
-                        <button type="button" id="shareCopyBtn" class="btn btn-accent w-100 share-copy-btn" onclick="copyShareCode()">
+                        <button type="button" id="shareCopyBtn" class="btn btn-accent w-100 share-copy-btn magnetic" onclick="copyShareCode()">
                             <i class="fa-solid fa-copy me-2"></i><span id="shareCopyLabel"><%= lang.shareCopy %></span>
                         </button>
                         <!-- Only revealed if the clipboard write fails (non-secure context): the
@@ -239,7 +239,7 @@
                             <button type="button" class="btn btn-outline-light flex-shrink-0" onclick="pasteShareCode()">
                                 <i class="fa-solid fa-paste me-2"></i><%= lang.sharePaste %>
                             </button>
-                            <button type="button" class="btn btn-accent flex-grow-1" id="shareImportBtn" onclick="applyShareCode()">
+                            <button type="button" class="btn btn-accent flex-grow-1 magnetic" id="shareImportBtn" onclick="applyShareCode()">
                                 <i class="fa-solid fa-wand-magic-sparkles me-2"></i><%= lang.shareImport %>
                             </button>
                         </div>
@@ -257,7 +257,7 @@
             <i class="bi bi-steam login-hero-logo mb-3"></i>
             <h1 class="login-hero-title mb-2"><%= config.name %></h1>
             <p class="text-secondary login-hero-sub mb-4"><%= lang.loginTagline || lang.needLogin %></p>
-            <a class="btn btn-steam btn-lg d-inline-flex align-items-center" href="<%= subdir %>api/auth/steam">
+            <a class="btn btn-steam btn-lg magnetic d-inline-flex align-items-center" href="<%= subdir %>api/auth/steam">
                 <i class="bi bi-steam me-2"></i><%= lang.navLogin %> <%= lang.viaSteam %>
             </a>
         </div>
@@ -317,7 +317,7 @@
         </div>
         <div class="row">
             <div class="col-2 rounded p-0 d-none d-lg-block">
-                <div class="sticky-top" style="top: 10px;">
+                <div class="sticky-top" style="top: 78px;">
                     <div class="bg-nav rounded p-0 p-2 pb-0">
                         <button class="pushable" onclick="showLoadout()">
                             <span class="shadow"></span>

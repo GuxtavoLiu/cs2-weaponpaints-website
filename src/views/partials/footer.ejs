@@ -13,6 +13,16 @@
 <script type="module" src="<%= subdir %>js/sideBtns.js"></script>
 <script type="module" src="<%= subdir %>js/sticker2d.js"></script>
 
+<!-- Redesign motion layer: tilt, reveal, spotlight, magnetic, ripple, sidebar
+     marker, navbar condense. Plain script, runs after the app scripts; only
+     decorates the DOM and is a no-op under prefers-reduced-motion. -->
+<script src="<%= subdir %>js/motion.js"></script>
+
+<!-- Client-side URL routing (History API): /rifles, /knives, /weapon/:name,
+     etc. Wraps the global view functions to update the URL and handles
+     back/forward + deep links. Loads after the view functions are defined. -->
+<script src="<%= subdir %>js/router.js"></script>
+
 <script>
     let subdir = "<%= subdir %>";
     let lang = "<%- langCode %>";

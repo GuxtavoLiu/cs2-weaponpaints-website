@@ -1,43 +1,59 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 * {
     margin: 0;
     padding: 0;
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 :root {
-    --lte-primary-bg: #101010;
-    --lte-secondary-bg: #202020;
-    --lte-default-bg: rgba(21, 21, 21, 0.4);
-    --lte-small-default-bg: rgba(31, 22, 22, 0.4);
-    
+    /* ---- Redesign "minimalista overpowered" -------------------------------
+       Neutral near-black scale (panels, lines, text). The token NAMES are kept
+       so every component that already references them inherits the new look.
+       Accent stays CS2 orange; premium stays pink; rarity colours untouched. */
+    --lte-primary-bg: #0a0a0b;   /* page background */
+    --lte-secondary-bg: #0f0f11; /* navbar / panels / modal headers */
+    --lte-default-bg: rgba(255, 255, 255, 0.02);
+    --lte-small-default-bg: rgba(255, 255, 255, 0.02);
+
+    /* New neutral helpers used by the modern components below. */
+    --lte-panel: #0f0f11;
+    --lte-panel-2: #141417;
+    --lte-line: #1c1c20;
+    --lte-line-2: #2a2a30;
+    --lte-txt: #ededf0;
+    --lte-muted: #8a8a93;
+    --lte-faint: #5a5a62;
+
+    /* Motion easing shared across the redesign. */
+    --ease: cubic-bezier(.2, .85, .25, 1);
+    --ease-out: cubic-bezier(.16, 1, .3, 1);
+
     --lte-accent: #FFAC41;
     --lte-accent-rgb: 255, 172, 65;
 
     --lte-premium: #FF1E56;
     --lte-premium-rgb: 255, 30, 86;
 
-    --lte-grey: #DDD;
-    --lte-white: #EEEEEE;
+    --lte-grey: #c8c8cf;
+    --lte-white: #ededf0;
 
-    --lte-side-bg: #1b1b1b;
-    --lte-side-border: #3a3a3a;
+    --lte-side-bg: #141417;
+    --lte-side-border: #1c1c20;
 
-    --lte-side-workshop-bg: #1b1b23;
-    --lte-side-workshop-border: #3a3a53;
+    --lte-side-workshop-bg: #14141b;
+    --lte-side-workshop-border: #2a2a3a;
 
-    --lte-side-workshop-add-bg: #22221c;
-    --lte-side-workshop-add-border: #808050;
+    --lte-side-workshop-add-bg: #1a1a14;
+    --lte-side-workshop-add-border: #5a5a32;
 
-    --lte-side-workshop-limit-bg: #251f1f;
-    --lte-side-workshop-limit-border: #805050;
-    
-    --lte-active-side-workshop-bg: #2b2b33;
-    --lte-active-side-workshop-border: #4a4a63;
-    --lte-active-side-bg: #282828;
-    --lte-active-side-border: #5a5a5a;
+    --lte-side-workshop-limit-bg: #1a1212;
+    --lte-side-workshop-limit-border: #5a3232;
+
+    --lte-active-side-workshop-bg: #1f1f2a;
+    --lte-active-side-workshop-border: #3a3a53;
+    --lte-active-side-bg: #1a1a1e;
+    --lte-active-side-border: #2a2a30;
 
     --lte-common: 129, 140, 154;
     --lte-uncommon: 94,152,217;
@@ -84,18 +100,18 @@
     width: 100%;
     height: 5px;
     border-radius: 5px;
-    background: #323232;
+    background: var(--lte-line-2);
     outline: none;
-    opacity: 0.7;
+    opacity: 0.9;
     -webkit-transition: .2s;
     transition: opacity .2s;
     margin-bottom: 10px;
 }
-  
+
 .slider:hover {
     opacity: 1;
 }
-  
+
 .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -103,24 +119,28 @@
     height: 16px;
     border: 0;
     border-radius: 50%;
-    background-color: #94F3E4;
+    background-color: var(--lte-accent);
+    box-shadow: 0 0 0 4px rgba(var(--lte-accent-rgb), 0.18), 0 2px 6px rgba(0, 0, 0, 0.5);
     cursor: pointer;
+    transition: box-shadow .15s ease, transform .15s ease;
 }
-  
+.slider::-webkit-slider-thumb:hover {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 6px rgba(var(--lte-accent-rgb), 0.22), 0 2px 8px rgba(0, 0, 0, 0.55);
+}
+
 .slider::-moz-range-thumb {
-    width: 23px;
-    height: 24px;
+    width: 16px;
+    height: 16px;
     border: 0;
-      border-radius: 50%;
-    background-image: url('https://img.icons8.com/material-outlined/344/average-2.png');
-    background-size: contain;
-    background-position: center center;
-    background-repeat: no-repeat;
+    border-radius: 50%;
+    background-color: var(--lte-accent);
+    box-shadow: 0 0 0 4px rgba(var(--lte-accent-rgb), 0.18);
     cursor: pointer;
 }
 
 .form-control {
-    background-color: #0e0e0e !important;
+    background-color: var(--lte-panel-2) !important;
 }
 
 .bg-color {
@@ -136,8 +156,12 @@
     border-color: var(--lte-accent) !important;
 }
 
+/* ---- Sidebar nav items (was a 3D "pushable" button; now a flat modern pill).
+   Class names kept because the JS toggles .active-side on .front and the markup
+   still nests .shadow/.edge/.front. The two backing layers are neutralised so
+   only the flat .front shows; motion.js adds a sliding marker behind them. */
 .pushable {
-    margin-bottom: 0.40rem;
+    margin-bottom: 0.25rem;
     width: 100%;
     position: relative;
     border: none !important;
@@ -145,102 +169,57 @@
     padding: 0;
     cursor: pointer;
     outline-offset: 4px;
-    transition: filter 250ms;
+    transition: filter 200ms var(--ease);
 }
 
-.shadow {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 6px;
-    background: hsl(0deg 0% 0% / 0.25);
-    will-change: transform;
-    transform: translateY(2px);
-    transition:
-    transform
-    300ms
-    cubic-bezier(.3, .7, .4, 1);
-}
-
+.shadow,
 .edge {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 6px;
-    background: linear-gradient(
-    to left,
-    #0a0c0b 0%,
-    #0f1110 8%,
-    #131615 92%,
-    #101312 100%
-    );
+    display: none;
 }
 
 .front {
     display: block;
     position: relative;
-    padding: 5px 0px;
-    border-radius: 6px;
-    font-size: 1rem;
-    color: white;
-    background: var(--lte-side-bg);
-    border: 1px solid var(--lte-side-border);
-    will-change: transform;
-    transform: translateY(-3px);
-    transition:
-    transform
-    600ms
-    cubic-bezier(.3, .7, .4, 1);
+    padding: 9px 4px;
+    border-radius: 10px;
+    font-size: .92rem;
+    color: var(--lte-muted);
+    background: transparent;
+    border: 1px solid transparent;
+    transition: color .2s var(--ease), background-color .2s var(--ease), border-color .2s var(--ease);
 }
+.front p { font-weight: 500; }
+.front img,
+.front i { transition: transform .25s var(--ease); }
 
 .limit-btn {
     background: var(--lte-side-workshop-limit-bg);
     border: 1px solid var(--lte-side-workshop-limit-border);
+    color: #e08a8a;
 }
-
 
 .workshop-btn {
     background: var(--lte-side-workshop-bg);
     border: 1px solid var(--lte-side-workshop-border);
+    color: var(--lte-txt);
 }
 
 .workshop-add-btn {
     background: var(--lte-side-workshop-add-bg);
     border: 1px solid var(--lte-side-workshop-add-border);
-}
-
-.pushable:hover {
-    filter: brightness(110%);
+    color: #d6cf8a;
 }
 
 .pushable:hover .front {
-    transform: translateY(-4px);
-    transition:
-    transform
-    250ms
-    cubic-bezier(.3, .7, .4, 1.5);
+    color: var(--lte-txt);
+    background: var(--lte-panel-2);
+    border-color: var(--lte-line);
 }
+.pushable:hover .front img,
+.pushable:hover .front i { transform: translateX(2px) scale(1.08); }
 
 .pushable:active .front {
-    transform: translateY(-1px);
-    transition: transform 34ms;
-}
-
-.pushable:hover .shadow {
-    transform: translateY(2px);
-    transition:
-    transform
-    250ms
-    cubic-bezier(.3, .7, .4, 1.5);
-}
-
-.pushable:active .shadow {
     transform: translateY(1px);
-    transition: transform 34ms;
 }
 
 .pushable:focus:not(:focus-visible) {
@@ -248,8 +227,10 @@
 }
 
 .active-side {
+    color: #fff !important;
     background-color: var(--lte-active-side-bg) !important;
-    border: 1px solid var(--lte-active-side-border) !important;
+    border: 1px solid var(--lte-line-2) !important;
+    box-shadow: inset 2px 0 0 var(--lte-accent);
 }
 
 .border-nav {
@@ -362,6 +343,16 @@
     --bs-btn-disabled-border-color: var(--lte-accent) !important;
 }
 
+/* Modern button polish: rounder corners, weightier label, smooth transitions.
+   Kept low-key (no global hover-transform) so card-internal buttons, the
+   team selector and the wear-tier segments keep their own behaviour. */
+.btn {
+    --bs-btn-border-radius: 10px;
+    font-weight: 600;
+    transition: background-color .2s var(--ease), border-color .2s var(--ease),
+                color .2s var(--ease), box-shadow .2s var(--ease), transform .15s var(--ease);
+}
+
 /* .btn-primary {
     z-index: 10;
     position: relative;
@@ -443,6 +434,7 @@
 .weapon-skin-title {
     overflow: hidden;
     white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .card-common {
@@ -569,29 +561,37 @@
 .weapon-card {
     overflow: hidden;
     position: relative;
-    transition: all cubic-bezier(0.165, 0.84, 0.44, 1), .3s;
+    border: 1px solid var(--lte-line);
+    border-radius: 14px !important;
+    transition: transform .35s var(--ease-out), box-shadow .35s var(--ease),
+                border-color .3s var(--ease), background-color .3s var(--ease);
     transform-style: preserve-3d;
-    box-shadow: 0 0 15px rgba(0, 0, 0, .5);
-    border-bottom: 6px solid #121212 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .4);
 }
 
-.weapon-card::before {
-    position: absolute;
+/* Shine sweep that crosses the card on hover (the "movement"). */
+.weapon-card::after {
     content: '';
-    width: 100%;
+    position: absolute;
+    top: 0;
+    left: -60%;
+    width: 45%;
     height: 100%;
-    box-shadow: inset 0 0 30px rgba(125, 125, 125, .07);
-    transform: translateZ(-10px);
+    background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .07), transparent);
+    transform: skewX(-18deg);
+    transition: left .7s var(--ease);
+    pointer-events: none;
+    z-index: 2;
 }
-
-.weapon-card:hover::before {
-    box-shadow: none;
+.weapon-card:hover::after {
+    left: 130%;
 }
 
 .weapon-card:hover {
-    transform: translateY(3px);
-    border-bottom: 3px solid #060606 !important;
-    box-shadow: 0 0 20px black;
+    transform: translateY(-5px);
+    /* currentColor = the rarity colour set by .card-* — a rarity-tinted glow. */
+    border-color: currentColor;
+    box-shadow: 0 20px 42px -20px currentColor, 0 8px 22px rgba(0, 0, 0, .55);
 }
 
 .show-hover, .img-show-hover {
@@ -614,7 +614,9 @@
 
 .active-card {
     margin: -2px;
-    outline: 2px solid rgba(228,174,57) !important;
+    outline: 2px solid var(--lte-accent) !important;
+    outline-offset: -1px;
+    box-shadow: 0 0 0 4px rgba(var(--lte-accent-rgb), 0.18), 0 8px 22px rgba(0, 0, 0, .5);
 }
 
 .active-card > .settings {
@@ -684,7 +686,10 @@ li {
 }
 
 .text-roboto {
-    font-family: 'Roboto Condensed', sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    font-variant-numeric: tabular-nums;
 }
 
 .bg-option {
@@ -1519,9 +1524,9 @@ li {
     filter: drop-shadow(0 0 25px rgba(102, 192, 244, 0.35));
 }
 .login-hero-title {
-    font-size: 3rem;
-    font-weight: 700;
-    letter-spacing: 1px;
+    font-size: 3.1rem;
+    font-weight: 800;
+    letter-spacing: -.02em;
 }
 .login-hero-sub {
     max-width: 520px;
@@ -1704,7 +1709,9 @@ li {
    Shown in #skinsContainer while the multi-MB skins JSON loads. Pure CSS
    shimmer; the first real render replaces the container so no JS teardown. */
 .skeleton-card {
-    background: var(--lte-secondary-bg, #202020);
+    background: var(--lte-panel, #0f0f11);
+    border: 1px solid var(--lte-line, #1c1c20);
+    border-radius: 14px;
     padding: 1rem;
     display: flex;
     flex-direction: column;
@@ -1715,8 +1722,8 @@ li {
 .skeleton-line {
     position: relative;
     overflow: hidden;
-    border-radius: 6px;
-    background: #2a2a2a;
+    border-radius: 8px;
+    background: var(--lte-line-2, #2a2a30);
 }
 .skeleton-thumb {
     width: 80%;
@@ -1890,4 +1897,188 @@ li {
 }
 .share-copy-btn:disabled {
     opacity: 0.5;
+}
+
+/* ============================================================================
+   REDESIGN "minimalista overpowered" — chrome + motion layer
+   Additive block. Styles the page background, glass navbar, and the new pieces
+   that motion.js injects (spotlight, sidebar marker, ripple). All movement is
+   disabled under prefers-reduced-motion at the bottom.
+   ============================================================================ */
+
+body {
+    color: var(--lte-txt);
+}
+
+/* Depth for the card tilt (motion.js rotates cards on hover). */
+#skinsContainer {
+    perspective: 1200px;
+}
+
+/* Skin paint-name title was an <h5> (~1.25rem) and ran long / truncated.
+   Bring it down to a compact, readable size and tighten the surrounding text. */
+h5.weapon-skin-title {
+    font-size: .88rem;
+    line-height: 1.2;
+    margin-bottom: .15rem;
+    margin-right: .75rem; /* breathing room before the card edge */
+}
+/* On cards that carry the per-team CT/T icons (bottom-right), keep the paint
+   name clear of them: reserve space on the right so it ellipsises in time. */
+.has-card-team h5.weapon-skin-title {
+    margin-right: 0;
+    padding-right: 56px;
+}
+.weapon-card .text-secondary small.text-roboto {
+    font-size: .72rem;
+}
+
+/* Page background: graphite gradient with a faint amber/cool wash, not flat black. */
+body.bg-color {
+    background-color: var(--lte-primary-bg);
+    background-image:
+        radial-gradient(1200px 600px at 78% -12%, rgba(var(--lte-accent-rgb), 0.06), transparent 60%),
+        radial-gradient(900px 520px at 0% 8%, rgba(90, 110, 255, 0.05), transparent 55%);
+    background-attachment: fixed;
+}
+
+/* ---- Glass, sticky, condensing navbar ---- */
+.navbar.bg-nav {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    background-color: rgba(15, 15, 17, 0.72) !important;
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    border-bottom: 1px solid transparent;
+    transition: padding .3s var(--ease), background-color .3s var(--ease), border-color .3s var(--ease);
+}
+.navbar.bg-nav.shrink {
+    padding-top: .35rem;
+    padding-bottom: .35rem;
+    background-color: rgba(10, 10, 11, 0.9) !important;
+    border-bottom-color: var(--lte-line);
+}
+.navbar-brand {
+    font-weight: 800;
+    letter-spacing: -.02em;
+}
+
+/* Sidebar panel that holds the nav items. */
+.bg-nav.rounded {
+    border: 1px solid var(--lte-line);
+}
+
+/* Accent focus ring on inputs site-wide (was Bootstrap blue). */
+.form-control:focus,
+.form-select:focus {
+    border-color: rgba(var(--lte-accent-rgb), 0.6) !important;
+    box-shadow: 0 0 0 .18rem rgba(var(--lte-accent-rgb), 0.18) !important;
+}
+
+.profile-bg {
+    background: var(--lte-panel-2);
+    border: 1px solid var(--lte-line);
+}
+
+/* ---- Cursor spotlight (injected into <body> by motion.js) ---- */
+.fx-spotlight {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(360px circle at var(--mx, -200px) var(--my, -200px),
+        rgba(255, 255, 255, 0.04), transparent 65%);
+    transition: background .1s linear;
+}
+/* Keep app content above the spotlight layer. */
+.navbar, .container, .container-fluid, .login-hero, .sticker-picker-overlay,
+.sticker2d-overlay, .modal, #toastStack { position: relative; z-index: 1; }
+
+/* ---- Sidebar sliding marker (injected into the sidebar panel by motion.js) ---- */
+.nav-marker {
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    height: 0;
+    border-radius: 10px;
+    background: var(--lte-panel-2);
+    border: 1px solid var(--lte-line);
+    box-shadow: inset 2px 0 0 var(--lte-accent);
+    opacity: 0;
+    z-index: 0;
+    pointer-events: none;
+    transition: transform .42s var(--ease), height .25s var(--ease), opacity .3s var(--ease);
+}
+/* The marker sits behind the buttons; their .front backgrounds become
+   transparent on hover so the marker shows through. */
+.has-nav-marker .pushable { z-index: 1; }
+.has-nav-marker .pushable:hover .front,
+.has-nav-marker .active-side {
+    background: transparent !important;
+    border-color: transparent !important;
+}
+.has-nav-marker .active-side { box-shadow: none; }
+
+/* ---- Card reveal-on-scroll (motion.js adds .fx-reveal then .fx-in) ---- */
+.fx-reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity .5s var(--ease-out), transform .5s var(--ease-out);
+    will-change: opacity, transform;
+}
+.fx-reveal.fx-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ---- Magnetic buttons (motion.js sets inline transform) ---- */
+.magnetic {
+    will-change: transform;
+    transition: transform .25s var(--ease);
+}
+
+/* ---- Floating tooltip for truncated skin names (motion.js) ---- */
+.fx-tip {
+    position: fixed;
+    z-index: 3000;
+    pointer-events: none;
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 5px 10px;
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--lte-txt);
+    background: var(--lte-panel-2);
+    border: 1px solid var(--lte-line-2);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+    opacity: 0;
+    transform: translate(-50%, 4px);
+    transition: opacity .15s var(--ease), transform .15s var(--ease);
+}
+.fx-tip.show {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+/* ---- Click ripple (motion.js appends .fx-ripple spans) ---- */
+.fx-ripple {
+    position: absolute;
+    border-radius: 50%;
+    transform: scale(0);
+    background: rgba(255, 255, 255, 0.28);
+    pointer-events: none;
+    animation: fx-rip .6s var(--ease-out);
+    z-index: 5;
+}
+@keyframes fx-rip { to { transform: scale(2.6); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .fx-spotlight { display: none; }
+    .weapon-card::after { display: none; }
+    .fx-reveal { opacity: 1 !important; transform: none !important; }
+    .nav-marker { transition: none; }
 }
