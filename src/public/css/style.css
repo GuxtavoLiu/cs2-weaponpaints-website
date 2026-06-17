@@ -1827,7 +1827,7 @@ li {
 }
 
 /* ---- Import / Export loadout modal --------------------------------------- */
-.share-modal {
+.modal-content.share-modal {
     background: var(--lte-primary-bg, #101010);
     border: 1px solid var(--lte-side-border, #3a3a3a);
     border-radius: 14px;
