@@ -197,9 +197,11 @@ const showP = () => {
 };
 
 const showUtility = () => {
-  window.currentViewRender = showUtility;
+  // Utility holds a single weapon (the Zeus), so skip the weapon-model step and
+  // show its skins directly - otherwise the tab looks like it has one Zeus skin
+  // until you click the model card. knifeSkins sets currentViewRender itself.
   sideBtnHandler("sideBtnUtility");
-  showDefaults("csgo_inventory_weapon_category_utility");
+  knifeSkins("weapon_taser");
 };
 
 // Agent views ignore the team selector by design (they have their own CT/T
@@ -483,7 +485,8 @@ const CATEGORY_SHOW_FN = {
   csgo_inventory_weapon_category_rifles: "showRifles()",
   csgo_inventory_weapon_category_smgs: "showPPs()",
   csgo_inventory_weapon_category_heavy: "showShotguns()",
-  csgo_inventory_weapon_category_utility: "showUtility()",
+  // utility intentionally omitted: showUtility renders the Zeus skins directly,
+  // so there's no weapon-model view to go "back" to.
 };
 
 window.knifeSkins = (knifeType) => {
