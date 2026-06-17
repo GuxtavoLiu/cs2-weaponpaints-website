@@ -13,6 +13,11 @@
 <script type="module" src="<%= subdir %>js/sideBtns.js"></script>
 <script type="module" src="<%= subdir %>js/sticker2d.js"></script>
 
+<!-- Redesign motion layer: tilt, reveal, spotlight, magnetic, ripple, sidebar
+     marker, navbar condense. Plain script, runs after the app scripts; only
+     decorates the DOM and is a no-op under prefers-reduced-motion. -->
+<script src="<%= subdir %>js/motion.js"></script>
+
 <script>
     let subdir = "<%= subdir %>";
     let lang = "<%- langCode %>";
