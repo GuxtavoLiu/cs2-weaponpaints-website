@@ -12,7 +12,7 @@ window.defaultsTemplate = (weapon, langObject, lang) => {
             </div>
         </div>
 
-        <a class="text-decoration-none d-flex flex-column" style="z-index: 0;">
+        <a onclick="knifeSkins(\'${weapon.weapon_name}\')" class="text-decoration-none d-flex flex-column" style="z-index: 0; cursor: pointer;">
                 <img src="${weapon.image}" class="weapon-img mx-auto my-2 img-show-hover" style="transform: translateY(16%) scale(0.95);" width="181px" height="136px" loading="lazy" alt="${weapon.paint_name}">
                 
                 <p class="m-0 text-secondary weapon-skin-title mx-auto text-center show-hover" style="transform: translateY(170%);"><small>${langObject.defaultSkin}</small></p>
@@ -41,7 +41,7 @@ window.changeSkinTemplate = (weapon, langObject, selectedKnife) => {
             </div>
         </div>
 
-        <a class="text-decoration-none d-flex flex-column" style="z-index: 0;">
+        <a onclick="knifeSkins(\'${weapon.weapon_name}\')" class="text-decoration-none d-flex flex-column" style="z-index: 0; cursor: pointer;">
                 <img src="${weapon.image}" class="weapon-img mx-auto my-2 img-show-hover" style="transform: translateY(16%) scale(0.95);" width="181px" height="136px" loading="lazy" alt="${weapon.image}" id="img-${weapon.weapon_name}">
                 
                 <p class="m-0 text-secondary weapon-skin-title mx-auto text-center show-hover" id="skinPaintName-${weapon.weapon_name}" style="transform: translateY(170%);"><small>${langObject.defaultSkin}</small></p>
