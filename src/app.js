@@ -139,7 +139,11 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.get(config.SUBDIR, async (req, res) => {
+// Renders the app shell (index.ejs). Used for the home path AND for every
+// client-side routed view (/rifles, /knives, /weapon/:name, ...) so deep links
+// and browser refresh land on the same page; router.js then shows the right
+// view based on the URL.
+const renderApp = async (req, res) => {
   const base = {
     config: config,
     session: req.session,
@@ -180,7 +184,9 @@ app.get(config.SUBDIR, async (req, res) => {
     console.log(e);
     res.render("index", { ...base, knife: [], skins: [], musics: [], gloves: [] });
   }
-});
+};
+
+app.get(config.SUBDIR, renderApp);
 
 // Switch the UI language: store the choice in the session and return to the
 // page the user came from. Unknown codes are ignored (keeps current language).
@@ -265,6 +271,19 @@ if (config.SUBDIR != "/") {
     res.redirect(config.SUBDIR.slice(0, -1));
   });
 }
+
+// Client-routed view URLs (/loadout, /rifles, /knives, /agents/ct,
+// /weapon/:name, ...). Serve the same app shell for any GET that isn't an
+// /api/* call or a static asset (a path with a file extension), so direct
+// access and refresh work. Registered last so real routes and static files
+// (express.static above) win first. The client router (router.js) then renders
+// the matching view from the URL.
+app.use((req, res, next) => {
+  if (req.method !== "GET") return next();
+  if (req.path.startsWith("/api/")) return next();
+  if (/\.\w+$/.test(req.path)) return next();
+  return renderApp(req, res);
+});
 
 // start server
 const server = app.listen(PORT, () => {
