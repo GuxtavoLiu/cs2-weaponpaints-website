@@ -1,5 +1,40 @@
 const socket = io()
 
+// ---- Image load retry -----------------------------------------------------
+// Skin/agent images are hotlinked from external CDNs (Steam, GitHub). When the
+// page loads dozens at once, a CDN occasionally drops one and the browser shows
+// a permanent broken-image icon, since an <img> never retries on its own. This
+// catches those failures (capture phase: image 'error' events don't bubble) and
+// reloads the same URL a few times with backoff before giving up. Re-using the
+// clean URL means a successful retry lands in the normal browser cache.
+;(() => {
+    const RETRIES = 3
+    const DELAYS = [400, 1200, 3000] // ms, per attempt
+    document.addEventListener(
+        'error',
+        (e) => {
+            const img = e.target
+            if (!(img instanceof HTMLImageElement)) return
+            const src = img.currentSrc || img.src
+            if (!/^https?:\/\//.test(src)) return // skip local icons/svgs
+            const tries = Number(img.dataset.retry || 0)
+            if (tries >= RETRIES) {
+                img.classList.add('img-load-failed')
+                return
+            }
+            const url = img.dataset.cleanSrc || src
+            img.dataset.cleanSrc = url
+            img.dataset.retry = String(tries + 1)
+            setTimeout(() => {
+                // Clearing then re-setting forces a fresh request for the same URL.
+                img.src = ''
+                img.src = url
+            }, DELAYS[tries] || 3000)
+        },
+        true,
+    )
+})()
+
 let currentWeaponId = ''
 let currentPaintId = ''
 // The weapon_name key and the side the float-edit modal will write to.

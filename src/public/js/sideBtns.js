@@ -640,7 +640,7 @@ const cardTeamSelectorHtml = (descriptor) => {
 
   if (teams.length === 1) {
     const isCT = teams[0] === 3;
-    const icon = isCT ? "icons/team_ct.png" : "icons/team_t.png";
+    const icon = isCT ? "/icons/team_ct.png" : "/icons/team_t.png";
     const label = isCT ? "CT" : "T";
     const on = equipped.includes(teams[0]) ? " active" : "";
     return `<div class="card-team card-team-locked${on}"><img src="${icon}" alt="${label}" title="${label}"></div>`;
@@ -651,9 +651,9 @@ const cardTeamSelectorHtml = (descriptor) => {
   const seg = (team, icon, label, on) =>
     `<button type="button" class="card-team-btn${on ? " active" : ""}" data-team="${team}" title="${label}" onclick="${click(team)}"><img src="${icon}" alt="${label}"></button>`;
   return `<div class="card-team" role="group">
-      ${seg("both", "icons/team_both.png", "Both", hasT && hasCT)}
-      ${seg("2", "icons/team_t.png", "T", hasT)}
-      ${seg("3", "icons/team_ct.png", "CT", hasCT)}
+      ${seg("both", "/icons/team_both.png", "Both", hasT && hasCT)}
+      ${seg("2", "/icons/team_t.png", "T", hasT)}
+      ${seg("3", "/icons/team_ct.png", "CT", hasCT)}
     </div>`;
 };
 

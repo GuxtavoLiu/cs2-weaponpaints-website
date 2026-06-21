@@ -12,7 +12,7 @@ const TEAM_T = 2;
 const TEAM_CT = 3;
 const TEAM_LABEL = { [TEAM_T]: "T", [TEAM_CT]: "CT" };
 // Official team patch icons (cswikia); shown instead of the T/CT text.
-const TEAM_ICON = { T: "icons/team_t.png", CT: "icons/team_ct.png", Both: "icons/team_both.png" };
+const TEAM_ICON = { T: "/icons/team_t.png", CT: "/icons/team_ct.png", Both: "/icons/team_both.png" };
 const teamIconImg = (label) =>
   `<img src="${TEAM_ICON[label]}" alt="${label}" title="${label}">`;
 

@@ -930,7 +930,7 @@ const loadoutAgentPanel = (teamKey) => {
         : `<div class="loadout-agent-img d-flex align-items-center justify-content-center text-secondary"><i class="fa-solid fa-person-rifle fa-3x"></i></div>`
     return `
         <div class="loadout-agent-card loadout-agent-${teamKey} rounded-3 d-flex flex-column p-2" onclick="${click}" title="${label}">
-            <p class="m-0 d-flex align-items-center"><span class="team-tag me-1 flex-shrink-0"><img src="icons/team_${teamKey}.png" alt="${teamKey.toUpperCase()}"></span><small class="text-secondary text-truncate">${name}</small></p>
+            <p class="m-0 d-flex align-items-center"><span class="team-tag me-1 flex-shrink-0"><img src="/icons/team_${teamKey}.png" alt="${teamKey.toUpperCase()}"></span><small class="text-secondary text-truncate">${name}</small></p>
             ${img}
         </div>`
 }
@@ -947,7 +947,7 @@ window.showLoadout = () => {
     const agentCol = (teamKey) => `<div class="loadout-agent-panel d-none d-md-block py-2">${loadoutAgentPanel(teamKey)}</div>`
     const half = (teamKey, gridId, agentFirst) => `
         <div class="flex-grow-1" style="min-width: 0;">
-            <div class="d-flex align-items-center gap-1 mb-1 ps-2"><span class="team-tag"><img src="icons/team_${teamKey}.png" alt=""></span><small class="text-secondary">${teamKey.toUpperCase()}</small></div>
+            <div class="d-flex align-items-center gap-1 mb-1 ps-2"><span class="team-tag"><img src="/icons/team_${teamKey}.png" alt=""></span><small class="text-secondary">${teamKey.toUpperCase()}</small></div>
             <div class="d-flex gap-3 align-items-start">
                 ${agentFirst ? agentCol(teamKey) : ''}
                 <div class="flex-grow-1" style="min-width: 0;">
