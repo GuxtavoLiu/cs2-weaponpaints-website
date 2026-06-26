@@ -304,12 +304,26 @@ window.changeGlove = (weaponid, team) => {
 };
 
 window.changeSkin = (steamid, weaponid, paintid, team) => {
+  const resolvedTeam =
+    team !== undefined ? team : writeTeamForWeapon(getKeyByValue(weaponIds, weaponid));
   socket.emit("change-skin", {
     steamid: steamid,
     weaponid: weaponid,
     paintid: paintid,
-    team: team !== undefined ? team : writeTeamForWeapon(getKeyByValue(weaponIds, weaponid)),
+    team: resolvedTeam,
   });
+  // Gloves: a glove skin only renders in game when the matching glove MODEL is
+  // equipped in wp_player_gloves. The skin grid card only saved the paint, so
+  // the equipped model stayed on the previous glove and the pick never showed.
+  // Glove defindexes start at 4725 (knives/guns are all below it), so also equip
+  // the glove model for the same team(s) when the clicked skin is a glove.
+  if (Number(weaponid) >= 4725) {
+    socket.emit("change-glove", {
+      weaponid: Number(weaponid),
+      steamUserId: user.id,
+      team: resolvedTeam,
+    });
+  }
   document.getElementById(`loading-${weaponid}-${paintid}`).style.visibility =
     "visible";
   document.getElementById(`loading-${weaponid}-${paintid}`).style.opacity = 1;

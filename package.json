@@ -8,7 +8,7 @@
     "start": "startWindows.bat",
     "startLinux": "nodemon -x 'node . || touch src/app.js'"
   },
-  "author": "L1teD",
+  "author": "L1uGOD",
   "license": "GPL-3.0-or-later",
   "dependencies": {
     "ejs": "^6.0.1",
